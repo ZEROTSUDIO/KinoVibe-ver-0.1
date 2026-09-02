@@ -1,4 +1,4 @@
-# 🎬 Movie Review App — Prototype v0.1
+# 🎬 Movie Review App — KinoVibe Prototype v0.1
 
 ## Goal
 Personal web app to review movies using **4 fixed criteria + personal bias**.
@@ -13,9 +13,9 @@ Flow: **Add → Review → Score → Calculate → View**
 
 ## Data Model
 
-**movies**: id, title, year, poster, review_text, story_score, visual_score, action_score, fun_score, created_at, updated_at
+**movies**: id, title, year, poster(optional), review_text, story_score, visual_score, action_score, fun_score, created_at, updated_at
 
-**biases**: id, movie_id, reason, amount, created_at
+**biases**: id, movie_id, reason, amount (can be negative), created_at
 *(One movie → many biases)*
 
 ## Review Criteria (0–10 each)
