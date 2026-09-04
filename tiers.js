@@ -28,12 +28,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tierListEl = document.getElementById('tier-list');
   const emptyStateEl = document.getElementById('empty-state');
 
-  loadingStateEl?.classList.remove('hidden');
+  if (loadingStateEl) loadingStateEl.style.display = 'flex';
   tierListEl.classList.add('hidden');
   emptyStateEl.classList.add('hidden');
 
-  const movies = await MovieStore.getAll();
-  loadingStateEl?.classList.add('hidden');
+  let movies = [];
+  try {
+    movies = await MovieStore.getAll();
+  } catch (err) {
+    console.error('Failed to load movies for tier list:', err);
+    movies = [];
+  } finally {
+    if (loadingStateEl) loadingStateEl.style.display = 'none';
+  }
 
   tierCountEl.textContent = `${movies.length} movies ranked`;
 

@@ -49,9 +49,11 @@ const Auth = {
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
 
-    // Remove any existing user nav item
-    const existing = document.querySelector('.nav-user');
-    if (existing) existing.remove();
+    // Remove any existing user nav items
+    const existingUser = document.querySelector('.nav-user');
+    if (existingUser) existingUser.remove();
+    const existingLogin = document.querySelector('.nav-login-link');
+    if (existingLogin) existingLogin.remove();
 
     if (user) {
       const userDiv = document.createElement('div');
@@ -65,6 +67,12 @@ const Auth = {
       document.getElementById('nav-signout-btn')?.addEventListener('click', () => {
         Auth.signOut();
       });
+    } else {
+      const loginLink = document.createElement('a');
+      loginLink.href = 'login.html';
+      loginLink.className = 'nav-link nav-login-link';
+      loginLink.textContent = 'Sign In / Register';
+      navLinks.appendChild(loginLink);
     }
   }
 };

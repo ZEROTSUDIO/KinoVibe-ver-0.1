@@ -13,12 +13,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allMovies = [];
 
   async function loadAndRender() {
-    loadingState?.classList.remove('hidden');
+    if (loadingState) loadingState.style.display = 'flex';
     grid.classList.add('hidden');
     emptyState.classList.add('hidden');
 
-    allMovies = await MovieStore.getAll();
-    loadingState?.classList.add('hidden');
+    try {
+      allMovies = await MovieStore.getAll();
+    } catch (err) {
+      console.error('Failed to load movies:', err);
+      allMovies = [];
+    } finally {
+      if (loadingState) loadingState.style.display = 'none';
+    }
+
     renderList();
   }
 

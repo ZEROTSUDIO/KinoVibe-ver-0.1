@@ -921,12 +921,13 @@ input[type='range']::-moz-range-thumb:hover {
   left: 0;
   right: 0;
   z-index: 1050;
-  background: var(--bg-card);
+  background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   max-height: 320px;
   overflow-y: auto;
   margin-top: 4px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 .tmdb-item {
