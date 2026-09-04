@@ -18,11 +18,22 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const movies = MovieStore.getAll();
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await Auth.requireAuth();
+  if (!user) return;
+  await Auth.initNav();
+
+  const loadingStateEl = document.getElementById('loading-state');
   const tierCountEl = document.getElementById('tier-count');
   const tierListEl = document.getElementById('tier-list');
   const emptyStateEl = document.getElementById('empty-state');
+
+  loadingStateEl?.classList.remove('hidden');
+  tierListEl.classList.add('hidden');
+  emptyStateEl.classList.add('hidden');
+
+  const movies = await MovieStore.getAll();
+  loadingStateEl?.classList.add('hidden');
 
   tierCountEl.textContent = `${movies.length} movies ranked`;
 

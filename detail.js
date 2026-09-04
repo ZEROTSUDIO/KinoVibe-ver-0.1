@@ -1,8 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await Auth.requireAuth();
+  if (!user) return;
+  await Auth.initNav();
+
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { window.location.href = 'index.html'; return; }
   
-  const movie = MovieStore.getById(id);
+  const movie = await MovieStore.getById(id);
   if (!movie) { window.location.href = 'index.html'; return; }
 
   // Set page title
@@ -122,9 +126,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === deleteModal) deleteModal.classList.remove('active');
   });
   
-  document.getElementById('confirm-delete').addEventListener('click', () => {
-    MovieStore.remove(movie.id);
-    window.location.href = 'index.html';
+  document.getElementById('confirm-delete').addEventListener('click', async () => {
+    const confirmBtn = document.getElementById('confirm-delete');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting...';
+    try {
+      await MovieStore.remove(movie.id);
+      window.location.href = 'index.html';
+    } catch (err) {
+      alert('Failed to delete review: ' + (err.message || err));
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete permanently';
+    }
   });
 
   function escapeHtml(str) {

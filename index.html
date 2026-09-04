@@ -40,7 +40,12 @@
       </div>
     </div>
 
-    <div class="row g-3 mb-5" id="movie-grid"></div>
+    <div class="loading-box" id="loading-state">
+      <div class="spinner"></div>
+      <div>Loading your reviews...</div>
+    </div>
+
+    <div class="row g-3 mb-5 hidden" id="movie-grid"></div>
 
     <div class="empty-state hidden" id="empty-state">
       <div class="empty-icon">🎬</div>
@@ -50,6 +55,7 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
   <script src="library.js"></script>
 </body>

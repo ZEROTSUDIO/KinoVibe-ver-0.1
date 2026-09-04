@@ -1,15 +1,30 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Check Authentication
+  const user = await Auth.requireAuth();
+  if (!user) return;
+  await Auth.initNav();
+
   const grid = document.getElementById('movie-grid');
   const countEl = document.getElementById('movie-count');
   const emptyState = document.getElementById('empty-state');
+  const loadingState = document.getElementById('loading-state');
   const sortSelect = document.getElementById('sort-select');
 
-  function renderLibrary() {
-    let movies = MovieStore.getAll();
-    const sort = sortSelect.value;
+  let allMovies = [];
 
-    // Sort
-    movies = sortMovies(movies, sort);
+  async function loadAndRender() {
+    loadingState?.classList.remove('hidden');
+    grid.classList.add('hidden');
+    emptyState.classList.add('hidden');
+
+    allMovies = await MovieStore.getAll();
+    loadingState?.classList.add('hidden');
+    renderList();
+  }
+
+  function renderList() {
+    const sort = sortSelect.value;
+    const movies = sortMovies(allMovies, sort);
 
     // Update count
     countEl.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} logged`;
@@ -38,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'col-6 col-md-4 col-lg-3';
       card.innerHTML = `
-        <a href="view.html?id=${movie.id}" class="movie-card fade-in" style="--delay:${i * 0.06}s">
+        <a href="view.html?id=${movie.id}" class="movie-card fade-in" style="--delay:${i * 0.05}s">
           <div class="movie-poster">${posterContent}</div>
           <div class="ticket-cut movie-info">
             <div>
@@ -76,12 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-  }
-
-  sortSelect.addEventListener('change', renderLibrary);
-  renderLibrary();
+  sortSelect.addEventListener('change', renderList);
+  await loadAndRender();
 });

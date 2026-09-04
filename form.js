@@ -1,4 +1,8 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await Auth.requireAuth();
+  if (!user) return;
+  await Auth.initNav();
+
   const form = document.getElementById('movie-form');
   const mode = form.dataset.mode; // 'add' or 'edit'
   
@@ -37,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mode === 'edit') {
     const id = new URLSearchParams(window.location.search).get('id');
     if (!id) { window.location.href = 'index.html'; return; }
-    const movie = MovieStore.getById(id);
+    const movie = await MovieStore.getById(id);
     if (!movie) { window.location.href = 'index.html'; return; }
     
     document.getElementById('movie-id').value = movie.id;
@@ -247,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Form submit
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const title = titleInput.value.trim();
@@ -284,8 +288,19 @@ document.addEventListener('DOMContentLoaded', () => {
       movieData.id = document.getElementById('movie-id').value;
     }
     
-    const saved = MovieStore.save(movieData);
-    window.location.href = `view.html?id=${saved.id}`;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving to cloud...';
+
+    try {
+      const saved = await MovieStore.save(movieData);
+      window.location.href = `view.html?id=${saved.id}`;
+    } catch (err) {
+      alert('Error saving review: ' + (err.message || err));
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
   });
 
   // Initial score calc
