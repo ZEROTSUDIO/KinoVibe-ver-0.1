@@ -19,8 +19,6 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = await Auth.requireAuth();
-  if (!user) return;
   await Auth.initNav();
 
   const loadingStateEl = document.getElementById('loading-state');

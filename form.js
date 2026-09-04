@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = await Auth.requireAuth();
-  if (!user) return;
   await Auth.initNav();
 
   const form = document.getElementById('movie-form');
@@ -93,6 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const query = e.target.value;
       if (!query || query.trim().length < 2) {
         tmdbResultsEl.classList.add('d-none');
+        tmdbResultsEl.style.display = 'none';
         tmdbResultsEl.innerHTML = '';
         return;
       }
@@ -107,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('click', (e) => {
       if (!tmdbSearchInput.contains(e.target) && !tmdbResultsEl.contains(e.target)) {
         tmdbResultsEl.classList.add('d-none');
+        tmdbResultsEl.style.display = 'none';
       }
     });
   }
@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!results || results.length === 0) {
       tmdbResultsEl.innerHTML = '<div class="p-3 text-muted text-center">No movies found on TMDB</div>';
       tmdbResultsEl.classList.remove('d-none');
+      tmdbResultsEl.style.display = 'block';
       return;
     }
 
@@ -133,6 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).join('');
 
     tmdbResultsEl.classList.remove('d-none');
+    tmdbResultsEl.style.display = 'block';
 
     // Add click event for each item
     tmdbResultsEl.querySelectorAll('.tmdb-item').forEach(item => {
@@ -143,6 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           selectTMDBMovie(details);
         }
         tmdbResultsEl.classList.add('d-none');
+        tmdbResultsEl.style.display = 'none';
       });
     });
   }
@@ -291,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Saving to cloud...';
+    submitBtn.textContent = 'Saving...';
 
     try {
       const saved = await MovieStore.save(movieData);

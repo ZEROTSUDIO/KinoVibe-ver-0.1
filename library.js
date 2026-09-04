@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  // Check Authentication
-  const user = await Auth.requireAuth();
-  if (!user) return;
   await Auth.initNav();
 
   const grid = document.getElementById('movie-grid');

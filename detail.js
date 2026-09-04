@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = await Auth.requireAuth();
-  if (!user) return;
   await Auth.initNav();
 
   const id = new URLSearchParams(window.location.search).get('id');

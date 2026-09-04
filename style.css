@@ -842,7 +842,8 @@ input[type='range']::-moz-range-thumb:hover {
 .text-amber { color: var(--score-mid); }
 .mt-1 { margin-top: 0.5rem; }
 .mb-4 { margin-bottom: 2rem; }
-.hidden { display: none; }
+.hidden { display: none !important; }
+.loading-box.hidden { display: none !important; }
 
 /* ---- Tier List ---- */
 .tier-row {
@@ -1102,6 +1103,23 @@ input[type='range']::-moz-range-thumb:hover {
   border-color: var(--score-low);
   color: var(--score-low);
   background: var(--score-low-bg);
+}
+
+.nav-login-link {
+  border: 1px solid var(--border-accent);
+  color: var(--accent-light) !important;
+  border-radius: var(--radius-full);
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 1.5rem;
+}
+
+.nav-login-link:hover {
+  background: var(--accent-soft);
+  color: #fff !important;
 }
 
 /* Loading State */

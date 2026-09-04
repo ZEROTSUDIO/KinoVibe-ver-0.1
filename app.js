@@ -6,12 +6,21 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase Client
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// Generate unique ID for local storage mode
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
 // Auth Helper Functions
 const Auth = {
   async getSession() {
     if (!supabase) return null;
-    const { data: { session } } = await supabase.auth.getSession();
-    return session;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    } catch {
+      return null;
+    }
   },
 
   async getUser() {
@@ -20,12 +29,7 @@ const Auth = {
   },
 
   async requireAuth() {
-    const user = await this.getUser();
-    if (!user) {
-      window.location.href = 'login.html';
-      return null;
-    }
-    return user;
+    return await this.getUser();
   },
 
   async signUp(email, password) {
@@ -40,8 +44,12 @@ const Auth = {
 
   async signOut() {
     if (!supabase) return;
-    await supabase.auth.signOut();
-    window.location.href = 'login.html';
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Sign out error:', e);
+    }
+    window.location.href = 'index.html';
   },
 
   async initNav() {
@@ -116,8 +124,26 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Movie Store — Supabase Cloud Database (User Scoped via RLS)
+// Movie Store — Hybrid: Supabase Cloud (when logged in) + LocalStorage (fallback/guest)
 class MovieStore {
+  static _LOCAL_KEY = 'kinovibe_movies';
+
+  static _loadLocal() {
+    try {
+      return JSON.parse(localStorage.getItem(this._LOCAL_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  static _saveLocal(movies) {
+    try {
+      localStorage.setItem(this._LOCAL_KEY, JSON.stringify(movies));
+    } catch (e) {
+      console.warn('Could not save to localStorage:', e);
+    }
+  }
+
   static _mapFromDB(row) {
     if (!row) return null;
     return {
@@ -138,87 +164,135 @@ class MovieStore {
   }
 
   static async getAll() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
-      .from('movies')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const user = await Auth.getUser();
+    if (supabase && user) {
+      try {
+        const { data, error } = await supabase
+          .from('movies')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching movies from Supabase:', error);
-      return [];
+        if (!error && data) {
+          return data.map(this._mapFromDB);
+        }
+      } catch (err) {
+        console.warn('Supabase fetch failed, falling back to local storage:', err);
+      }
     }
-    return (data || []).map(this._mapFromDB);
+    return this._loadLocal();
   }
 
   static async getById(id) {
-    if (!supabase || !id) return null;
-    const { data, error } = await supabase
-      .from('movies')
-      .select('*')
-      .eq('id', id)
-      .single();
+    if (!id) return null;
+    const user = await Auth.getUser();
+    if (supabase && user) {
+      try {
+        const { data, error } = await supabase
+          .from('movies')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-    if (error) {
-      console.error(`Error fetching movie ${id}:`, error);
-      return null;
+        if (!error && data) {
+          return this._mapFromDB(data);
+        }
+      } catch (err) {
+        console.warn('Supabase getById failed, checking local storage:', err);
+      }
     }
-    return this._mapFromDB(data);
+    return this._loadLocal().find(m => String(m.id) === String(id)) || null;
   }
 
   static async save(data) {
-    if (!supabase) throw new Error('Supabase is not initialized');
     const user = await Auth.getUser();
-    if (!user) throw new Error('User must be logged in to save reviews');
 
-    const payload = {
-      title: data.title,
-      year: data.year || null,
-      poster_url: data.posterUrl || '',
-      review_text: data.reviewText || '',
-      story_score: Number(data.storyScore),
-      visual_score: Number(data.visualScore),
-      action_score: Number(data.actionScore),
-      fun_score: Number(data.funScore),
-      biases: data.biases || [],
-      user_id: user.id,
-      updated_at: new Date().toISOString()
-    };
+    // 1. If logged in to Supabase, save to cloud
+    if (supabase && user) {
+      try {
+        const payload = {
+          title: data.title,
+          year: data.year || null,
+          poster_url: data.posterUrl || '',
+          review_text: data.reviewText || '',
+          story_score: Number(data.storyScore),
+          visual_score: Number(data.visualScore),
+          action_score: Number(data.actionScore),
+          fun_score: Number(data.funScore),
+          biases: data.biases || [],
+          user_id: user.id,
+          updated_at: new Date().toISOString()
+        };
 
-    if (data.id) {
-      // Update
-      const { data: updated, error } = await supabase
-        .from('movies')
-        .update(payload)
-        .eq('id', data.id)
-        .select()
-        .single();
+        if (data.id) {
+          const { data: updated, error } = await supabase
+            .from('movies')
+            .update(payload)
+            .eq('id', data.id)
+            .select()
+            .single();
 
-      if (error) throw error;
-      return this._mapFromDB(updated);
-    } else {
-      // Insert
-      const { data: inserted, error } = await supabase
-        .from('movies')
-        .insert([payload])
-        .select()
-        .single();
+          if (!error && updated) {
+            return this._mapFromDB(updated);
+          }
+        } else {
+          const { data: inserted, error } = await supabase
+            .from('movies')
+            .insert([payload])
+            .select()
+            .single();
 
-      if (error) throw error;
-      return this._mapFromDB(inserted);
+          if (!error && inserted) {
+            return this._mapFromDB(inserted);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase save failed, saving to local storage instead:', err);
+      }
     }
+
+    // 2. Local Storage fallback / Guest mode
+    const movies = this._loadLocal();
+    if (data.id) {
+      const idx = movies.findIndex(m => String(m.id) === String(data.id));
+      if (idx !== -1) {
+        movies[idx] = { ...movies[idx], ...data, updatedAt: new Date().toISOString() };
+        this._saveLocal(movies);
+        return movies[idx];
+      }
+    }
+
+    const movie = {
+      id: generateId(),
+      title: data.title || '',
+      year: data.year || null,
+      posterUrl: data.posterUrl || '',
+      reviewText: data.reviewText || '',
+      storyScore: Number(data.storyScore) || 5,
+      visualScore: Number(data.visualScore) || 5,
+      actionScore: Number(data.actionScore) || 5,
+      funScore: Number(data.funScore) || 5,
+      biases: data.biases || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...data
+    };
+    if (!movie.id) movie.id = generateId();
+    movies.unshift(movie);
+    this._saveLocal(movies);
+    return movie;
   }
 
   static async remove(id) {
-    if (!supabase || !id) return;
-    const { error } = await supabase
-      .from('movies')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error(`Error deleting movie ${id}:`, error);
-      throw error;
+    if (!id) return;
+    const user = await Auth.getUser();
+    if (supabase && user) {
+      try {
+        await supabase.from('movies').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase remove failed:', err);
+      }
     }
+    const movies = this._loadLocal().filter(m => String(m.id) !== String(id));
+    this._saveLocal(movies);
   }
 }

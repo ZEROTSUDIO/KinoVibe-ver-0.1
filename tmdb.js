@@ -7,11 +7,15 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
 class TMDBService {
   static getApiKey() {
-    return localStorage.getItem(TMDB_STORAGE_KEY) || TMDB_DEFAULT_KEY;
+    const stored = localStorage.getItem(TMDB_STORAGE_KEY);
+    if (stored && stored.trim() && stored.trim().length === 32) {
+      return stored.trim();
+    }
+    return TMDB_DEFAULT_KEY;
   }
 
   static setApiKey(key) {
-    if (key) {
+    if (key && key.trim()) {
       localStorage.setItem(TMDB_STORAGE_KEY, key.trim());
     } else {
       localStorage.removeItem(TMDB_STORAGE_KEY);
