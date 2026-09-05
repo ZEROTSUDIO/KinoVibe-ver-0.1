@@ -1,27 +1,10 @@
 // KinoVibe — TMDB API Module
 
-const TMDB_DEFAULT_KEY = '5d7d698bb620168d05c62d3d3861502d';
-const TMDB_STORAGE_KEY = 'kinovibe_tmdb_key';
+const TMDB_API_KEY = '5d7d698bb620168d05c62d3d3861502d';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
 class TMDBService {
-  static getApiKey() {
-    const stored = localStorage.getItem(TMDB_STORAGE_KEY);
-    if (stored && stored.trim() && stored.trim().length === 32) {
-      return stored.trim();
-    }
-    return TMDB_DEFAULT_KEY;
-  }
-
-  static setApiKey(key) {
-    if (key && key.trim()) {
-      localStorage.setItem(TMDB_STORAGE_KEY, key.trim());
-    } else {
-      localStorage.removeItem(TMDB_STORAGE_KEY);
-    }
-  }
-
   static getPosterUrl(path, size = 'w500') {
     if (!path) return '';
     if (path.startsWith('http')) return path;
@@ -36,9 +19,8 @@ class TMDBService {
 
   static async searchMovies(query) {
     if (!query || query.trim().length < 2) return [];
-    const apiKey = this.getApiKey();
     try {
-      const url = `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query.trim())}&include_adult=false&language=en-US&page=1`;
+      const url = `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query.trim())}&include_adult=false&language=en-US&page=1`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`TMDB API Error: ${res.status}`);
       const data = await res.json();
@@ -51,9 +33,8 @@ class TMDBService {
 
   static async getMovieDetails(tmdbId) {
     if (!tmdbId) return null;
-    const apiKey = this.getApiKey();
     try {
-      const url = `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${apiKey}&language=en-US`;
+      const url = `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`TMDB Details Error: ${res.status}`);
       return await res.json();

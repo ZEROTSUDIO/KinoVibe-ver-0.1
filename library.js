@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect to login page if not authenticated
+  const user = await Auth.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   await Auth.initNav();
 
   const grid = document.getElementById('movie-grid');
@@ -10,7 +17,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allMovies = [];
 
   async function loadAndRender() {
-    if (loadingState) loadingState.style.display = 'flex';
+    // Show spinner, hide everything else
+    if (loadingState) {
+      loadingState.classList.remove('hidden');
+      loadingState.style.display = 'flex';
+    }
     grid.classList.add('hidden');
     emptyState.classList.add('hidden');
 
@@ -20,7 +31,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Failed to load movies:', err);
       allMovies = [];
     } finally {
-      if (loadingState) loadingState.style.display = 'none';
+      // Always hide spinner regardless of result
+      if (loadingState) {
+        loadingState.classList.add('hidden');
+        loadingState.style.display = 'none';
+      }
     }
 
     renderList();

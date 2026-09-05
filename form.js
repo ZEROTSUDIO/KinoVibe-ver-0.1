@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect if not authenticated
+  const user = await Auth.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   await Auth.initNav();
 
   const form = document.getElementById('movie-form');
@@ -71,16 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     (movie.biases || []).forEach(b => addBiasRow(b.amount, b.reason));
   }
 
-  // TMDB API Key settings button
+  // TMDB API Key settings button — hidden if no longer needed, kept for legacy HTML
   if (tmdbKeyBtn) {
-    tmdbKeyBtn.addEventListener('click', () => {
-      const currentKey = TMDBService.getApiKey();
-      const newKey = prompt('Enter your TMDB API Key (v3 key):', currentKey);
-      if (newKey !== null) {
-        TMDBService.setApiKey(newKey);
-        alert('TMDB API Key updated successfully!');
-      }
-    });
+    tmdbKeyBtn.style.display = 'none'; // API key is hardcoded, no user config needed
   }
 
   // TMDB Live Search
@@ -90,7 +90,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       clearTimeout(debounceTimer);
       const query = e.target.value;
       if (!query || query.trim().length < 2) {
-        tmdbResultsEl.classList.add('d-none');
         tmdbResultsEl.style.display = 'none';
         tmdbResultsEl.innerHTML = '';
         return;
@@ -105,7 +104,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Close search dropdown on click outside
     document.addEventListener('click', (e) => {
       if (!tmdbSearchInput.contains(e.target) && !tmdbResultsEl.contains(e.target)) {
-        tmdbResultsEl.classList.add('d-none');
         tmdbResultsEl.style.display = 'none';
       }
     });
@@ -114,7 +112,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderTMDBResults(results) {
     if (!results || results.length === 0) {
       tmdbResultsEl.innerHTML = '<div class="p-3 text-muted text-center">No movies found on TMDB</div>';
-      tmdbResultsEl.classList.remove('d-none');
       tmdbResultsEl.style.display = 'block';
       return;
     }
@@ -133,7 +130,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
     }).join('');
 
-    tmdbResultsEl.classList.remove('d-none');
     tmdbResultsEl.style.display = 'block';
 
     // Add click event for each item
@@ -144,7 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (details) {
           selectTMDBMovie(details);
         }
-        tmdbResultsEl.classList.add('d-none');
         tmdbResultsEl.style.display = 'none';
       });
     });
@@ -166,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (runtimeInput) runtimeInput.value = movie.runtime || '';
 
     if (tmdbSearchInput) tmdbSearchInput.value = `${movie.title} (${movie.release_date ? movie.release_date.substring(0,4) : ''})`;
+    updateScore();
   }
 
   // Initialize sliders
@@ -233,7 +229,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return biases;
   }
 
-  // Update score preview
   function updateScore() {
     const biases = getBiases();
     const scores = calcScores(

@@ -19,6 +19,13 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect if not authenticated
+  const user = await Auth.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   await Auth.initNav();
 
   const loadingStateEl = document.getElementById('loading-state');
@@ -26,7 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tierListEl = document.getElementById('tier-list');
   const emptyStateEl = document.getElementById('empty-state');
 
-  if (loadingStateEl) loadingStateEl.style.display = 'flex';
+  // Show spinner
+  if (loadingStateEl) {
+    loadingStateEl.classList.remove('hidden');
+    loadingStateEl.style.display = 'flex';
+  }
   tierListEl.classList.add('hidden');
   emptyStateEl.classList.add('hidden');
 
@@ -37,7 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Failed to load movies for tier list:', err);
     movies = [];
   } finally {
-    if (loadingStateEl) loadingStateEl.style.display = 'none';
+    // Always hide spinner
+    if (loadingStateEl) {
+      loadingStateEl.classList.add('hidden');
+      loadingStateEl.style.display = 'none';
+    }
   }
 
   tierCountEl.textContent = `${movies.length} movies ranked`;

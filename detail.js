@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect if not authenticated
+  const user = await Auth.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
   await Auth.initNav();
 
   const id = new URLSearchParams(window.location.search).get('id');
