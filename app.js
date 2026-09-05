@@ -152,6 +152,11 @@ class MovieStore {
       title: row.title,
       year: row.year,
       posterUrl: row.poster_url,
+      backdropUrl: row.backdrop_url || '',
+      overview: row.overview || '',
+      genres: Array.isArray(row.genres) ? row.genres : [],
+      runtime: row.runtime || null,
+      tmdbId: row.tmdb_id || null,
       reviewText: row.review_text,
       storyScore: Number(row.story_score),
       visualScore: Number(row.visual_score),
@@ -172,11 +177,14 @@ class MovieStore {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          return data.map(this._mapFromDB);
+        if (error) {
+          console.error('Supabase getAll error:', error.message, error.details, error.hint);
+          // Fall through to localStorage
+        } else if (data) {
+          return data.map(row => this._mapFromDB(row));
         }
       } catch (err) {
-        console.warn('Supabase fetch failed, falling back to local storage:', err);
+        console.error('Supabase getAll exception:', err);
       }
     }
     return this._loadLocal();
@@ -213,6 +221,11 @@ class MovieStore {
           title: data.title,
           year: data.year || null,
           poster_url: data.posterUrl || '',
+          backdrop_url: data.backdropUrl || '',
+          overview: data.overview || '',
+          genres: data.genres || [],
+          runtime: data.runtime || null,
+          tmdb_id: data.tmdbId || null,
           review_text: data.reviewText || '',
           story_score: Number(data.storyScore),
           visual_score: Number(data.visualScore),
@@ -231,7 +244,9 @@ class MovieStore {
             .select()
             .single();
 
-          if (!error && updated) {
+          if (error) {
+            console.error('Supabase UPDATE error:', error.message, error.details, error.hint);
+          } else if (updated) {
             return this._mapFromDB(updated);
           }
         } else {
@@ -241,16 +256,19 @@ class MovieStore {
             .select()
             .single();
 
-          if (!error && inserted) {
+          if (error) {
+            console.error('Supabase INSERT error:', error.message, error.details, error.hint);
+          } else if (inserted) {
             return this._mapFromDB(inserted);
           }
         }
       } catch (err) {
-        console.warn('Supabase save failed, saving to local storage instead:', err);
+        console.error('Supabase save exception:', err);
       }
     }
 
-    // 2. Local Storage fallback / Guest mode
+    // 2. Local Storage fallback
+
     const movies = this._loadLocal();
     if (data.id) {
       const idx = movies.findIndex(m => String(m.id) === String(data.id));
