@@ -93,12 +93,23 @@ function calcScores(story, visuals, action, fun, biases = []) {
   action = Number(action) || 0;
   fun = Number(fun) || 0;
   const base = (story + visuals + action + fun) / 4;
-  const totalBias = biases.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const totalBias = (biases || []).reduce((sum, b) => {
+    if (b === null || b === undefined) return sum;
+    const rawVal = typeof b === 'object' ? b.amount : b;
+    if (typeof rawVal === 'number') {
+      return sum + (isNaN(rawVal) ? 0 : rawVal);
+    }
+    const clean = String(rawVal || '').trim().replace(/\s+/g, '').replace(',', '.');
+    const amt = parseFloat(clean);
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+  const roundedBase = Math.round(base * 10) / 10;
+  const roundedBias = Math.round(totalBias * 10) / 10;
   const raw = (story + visuals + action + fun + totalBias) / 4;
   const final_ = Math.max(0, Math.min(10, raw));
   return {
-    base: Math.round(base * 10) / 10,
-    totalBias,
+    base: roundedBase,
+    totalBias: roundedBias,
     final: Math.round(final_ * 10) / 10
   };
 }

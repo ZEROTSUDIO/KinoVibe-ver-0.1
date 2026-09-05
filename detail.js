@@ -97,9 +97,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     biases.forEach(b => {
       const pill = document.createElement('span');
-      const isPos = b.amount > 0;
+      const rawVal = typeof b === 'object' && b !== null ? b.amount : b;
+      let amt;
+      if (typeof rawVal === 'number') {
+        amt = isNaN(rawVal) ? 0 : rawVal;
+      } else {
+        const clean = String(rawVal || '').trim().replace(/\s+/g, '').replace(',', '.');
+        amt = parseFloat(clean);
+        if (isNaN(amt)) amt = 0;
+      }
+      const isPos = amt > 0;
       pill.className = `bias-pill ${isPos ? 'positive' : 'negative'}`;
-      pill.innerHTML = `<span class="pill-amount">${isPos ? '+' : ''}${b.amount}</span> ${escapeHtml(b.reason)}`;
+      pill.innerHTML = `<span class="pill-amount">${isPos ? '+' : ''}${amt}</span> ${escapeHtml(b.reason)}`;
       pillsContainer.appendChild(pill);
     });
   }

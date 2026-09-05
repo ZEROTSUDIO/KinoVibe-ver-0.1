@@ -181,16 +181,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Bias management
+  function parseBiasAmount(val) {
+    if (val === null || val === undefined) return NaN;
+    if (typeof val === 'number') return isNaN(val) ? NaN : val;
+    const str = String(val).trim().replace(/\s+/g, '').replace(',', '.');
+    if (!str) return NaN;
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? NaN : parsed;
+  }
+
   addBiasBtn.addEventListener('click', () => addBiasRow(0, ''));
 
   function addBiasRow(amount = 0, reason = '') {
     const row = document.createElement('div');
     row.className = 'bias-row fade-in';
-    const amtStr = amount > 0 ? `+${amount}` : amount === 0 ? '' : `${amount}`;
-    const colorClass = amount > 0 ? 'positive' : amount < 0 ? 'negative' : '';
+    const numAmt = parseBiasAmount(amount);
+    const amtStr = !isNaN(numAmt) ? (numAmt > 0 ? `+${numAmt}` : numAmt === 0 ? '' : `${numAmt}`) : '';
+    const colorClass = !isNaN(numAmt) && numAmt > 0 ? 'positive' : !isNaN(numAmt) && numAmt < 0 ? 'negative' : '';
     row.innerHTML = `
       <input type="text" class="bias-amount form-input ${colorClass}" value="${amtStr}" placeholder="±0">
-      <input type="text" class="bias-reason form-input" value="${reason}" placeholder="Reason for bias">
+      <input type="text" class="bias-reason form-input" value="${escapeHtml(reason)}" placeholder="Reason for bias">
       <button type="button" class="bias-remove">×</button>
     `;
     biasContainer.appendChild(row);
@@ -198,11 +208,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Amount input: update color class on change
     const amtInput = row.querySelector('.bias-amount');
     amtInput.addEventListener('input', () => {
-      const val = parseFloat(amtInput.value);
+      const val = parseBiasAmount(amtInput.value);
       amtInput.classList.remove('positive', 'negative');
-      if (val > 0) amtInput.classList.add('positive');
-      else if (val < 0) amtInput.classList.add('negative');
+      if (!isNaN(val)) {
+        if (val > 0) amtInput.classList.add('positive');
+        else if (val < 0) amtInput.classList.add('negative');
+      }
       updateScore();
+    });
+
+    // Format nicely on blur (e.g. .5 -> +0.5, -0.5 -> -0.5)
+    amtInput.addEventListener('blur', () => {
+      const val = parseBiasAmount(amtInput.value);
+      if (!isNaN(val) && amtInput.value.trim() !== '') {
+        amtInput.value = val > 0 ? `+${val}` : `${val}`;
+      }
     });
 
     // Remove button
@@ -219,9 +239,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const rows = biasContainer.querySelectorAll('.bias-row');
     const biases = [];
     rows.forEach(row => {
-      const amtStr = row.querySelector('.bias-amount').value.trim();
+      const amtStr = row.querySelector('.bias-amount').value;
       const reason = row.querySelector('.bias-reason').value.trim();
-      const amount = parseFloat(amtStr);
+      const amount = parseBiasAmount(amtStr);
       if (!isNaN(amount)) {
         biases.push({ amount, reason });
       }
