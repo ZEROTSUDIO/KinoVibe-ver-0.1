@@ -29,10 +29,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const filterBtns = document.querySelectorAll('.matrix-filter-btn');
   const btnPosters = document.getElementById('toggle-matrix-posters');
   const btnDots = document.getElementById('toggle-matrix-dots');
+  const tagFilterBar = document.getElementById('tag-filter-bar');
 
   let currentView = localStorage.getItem('kinovibe_matrix_view') || 'posters';
   let activeQuadrant = 'all';
   let searchTerm = '';
+  let activeTags = new Set();
+
+  // Read URL param (e.g. matrix.html?tag=sci-fi)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTag = urlParams.get('tag');
+  if (urlTag) activeTags.add(urlTag.trim().toLowerCase());
 
   // Show spinner
   if (loadingStateEl) {
@@ -62,65 +69,121 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  matrixCountEl.textContent = `${rawMovies.length} movie${rawMovies.length !== 1 ? 's' : ''} plotted`;
   emptyStateEl.classList.add('hidden');
   matrixWrapperEl.classList.remove('hidden');
+
+  // ─── Tag Filter Bar ──────────────────────────────────
+  function renderTagFilterBar() {
+    const allTags = MovieStore.getAllTags(rawMovies);
+    if (allTags.length === 0) {
+      tagFilterBar.classList.add('hidden');
+      return;
+    }
+    tagFilterBar.classList.remove('hidden');
+
+    tagFilterBar.innerHTML = `
+      <button class="tag-pill ${activeTags.size === 0 ? 'active' : ''}" data-tag="__all__">
+        All <span class="tag-pill-count">${rawMovies.length}</span>
+      </button>
+      ${allTags.map(tag => {
+        const isActive = activeTags.has(tag);
+        const cnt = rawMovies.filter(m => Array.isArray(m.tags) && m.tags.includes(tag)).length;
+        return `<button class="tag-pill ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)} <span class="tag-pill-count">${cnt}</span>
+        </button>`;
+      }).join('')}
+    `;
+
+    tagFilterBar.querySelectorAll('.tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag;
+        if (tag === '__all__') {
+          activeTags.clear();
+        } else {
+          activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
+        }
+        if (activeTags.size === 1) {
+          const [t] = activeTags;
+          history.replaceState(null, '', `?tag=${encodeURIComponent(t)}`);
+        } else {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        renderTagFilterBar();
+        rebuildAndRender();
+      });
+    });
+  }
+
+  function getTagFilteredMovies() {
+    if (activeTags.size === 0) return rawMovies;
+    return rawMovies.filter(m => {
+      const movieTags = Array.isArray(m.tags) ? m.tags : [];
+      for (const t of activeTags) {
+        if (!movieTags.includes(t)) return false;
+      }
+      return true;
+    });
+  }
+  // ────────────────────────────────────────────────────
 
   // Process movie coordinates & quadrants
   const coordMap = new Map();
 
-  const movies = rawMovies.map(movie => {
-    const story = Number(movie.storyScore) || 0;
-    const visuals = Number(movie.visualScore) || 0;
-    const action = Number(movie.actionScore) || 0;
-    const fun = Number(movie.funScore) || 0;
+  function processMovies(source) {
+    coordMap.clear();
+    return source.map(movie => {
+      const story = Number(movie.storyScore) || 0;
+      const visuals = Number(movie.visualScore) || 0;
+      const action = Number(movie.actionScore) || 0;
+      const fun = Number(movie.funScore) || 0;
 
-    // Horizontal: Quality = avg(Story + Visuals)
-    const quality = Math.round(((story + visuals) / 2) * 10) / 10;
+      // Horizontal: Quality = avg(Story + Visuals)
+      const quality = Math.round(((story + visuals) / 2) * 10) / 10;
+      // Vertical: Entertainment = avg(Action + Fun)
+      const entertainment = Math.round(((action + fun) / 2) * 10) / 10;
 
-    // Vertical: Entertainment = avg(Action + Fun)
-    const entertainment = Math.round(((action + fun) / 2) * 10) / 10;
+      const scores = calcScores(story, visuals, action, fun, movie.biases || []);
+      const finalScore = Number(scores.final);
 
-    const scores = calcScores(story, visuals, action, fun, movie.biases || []);
-    const finalScore = Number(scores.final);
+      // 4 Quadrants
+      let quadrant = 'duds';
+      let quadrantLabel = 'Duds & Skips';
+      if (quality >= 5 && entertainment >= 5) {
+        quadrant = 'peak'; quadrantLabel = 'Peak Cinema';
+      } else if (quality < 5 && entertainment >= 5) {
+        quadrant = 'guilty'; quadrantLabel = 'Guilty Pleasures';
+      } else if (quality >= 5 && entertainment < 5) {
+        quadrant = 'slow'; quadrantLabel = 'Slow Burns & Prestige';
+      }
 
-    // 4 Quadrants
-    let quadrant = 'duds';
-    let quadrantLabel = 'Duds & Skips';
-    if (quality >= 5 && entertainment >= 5) {
-      quadrant = 'peak';
-      quadrantLabel = 'Peak Cinema';
-    } else if (quality < 5 && entertainment >= 5) {
-      quadrant = 'guilty';
-      quadrantLabel = 'Guilty Pleasures';
-    } else if (quality >= 5 && entertainment < 5) {
-      quadrant = 'slow';
-      quadrantLabel = 'Slow Burns & Prestige';
-    } else {
-      quadrant = 'duds';
-      quadrantLabel = 'Duds & Skips';
-    }
+      const key = `${quality.toFixed(1)}_${entertainment.toFixed(1)}`;
+      const coordIndex = coordMap.get(key) || 0;
+      coordMap.set(key, coordIndex + 1);
 
-    const key = `${quality.toFixed(1)}_${entertainment.toFixed(1)}`;
-    const coordIndex = coordMap.get(key) || 0;
-    coordMap.set(key, coordIndex + 1);
+      return {
+        ...movie,
+        quality, entertainment,
+        story, visuals, action, fun,
+        finalScore, quadrant, quadrantLabel, coordIndex
+      };
+    });
+  }
 
-    return {
-      ...movie,
-      quality,
-      entertainment,
-      story,
-      visuals,
-      action,
-      fun,
-      finalScore,
-      quadrant,
-      quadrantLabel,
-      coordIndex
-    };
-  });
+  let movies = processMovies(rawMovies);
 
-  // Calculate percentage positions with jitter for overlapping coordinates
+  function rebuildAndRender() {
+    const filtered = getTagFilteredMovies();
+    movies = processMovies(filtered);
+
+    const displayCount = activeTags.size > 0
+      ? `${filtered.length} / ${rawMovies.length} movies plotted`
+      : `${rawMovies.length} movie${rawMovies.length !== 1 ? 's' : ''} plotted`;
+    matrixCountEl.textContent = displayCount;
+
+    renderPins();
+  }
+
+  // Calculate percentage positions
   const INSET = 6; // % margin inside board
   const USABLE = 100 - (INSET * 2);
 
@@ -142,7 +205,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       let posX = INSET + (movie.quality / 10) * USABLE + offsetX;
       let posY = INSET + (movie.entertainment / 10) * USABLE + offsetY;
 
-      // Keep within bounds
       posX = Math.max(3, Math.min(97, posX));
       posY = Math.max(3, Math.min(97, posY));
 
@@ -180,9 +242,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Hover / Tooltip logic
-      pin.addEventListener('mouseenter', (e) => showTooltip(movie, pin));
+      pin.addEventListener('mouseenter', () => showTooltip(movie, pin));
       pin.addEventListener('mouseleave', hideTooltip);
-      pin.addEventListener('focus', (e) => showTooltip(movie, pin));
+      pin.addEventListener('focus', () => showTooltip(movie, pin));
       pin.addEventListener('blur', hideTooltip);
 
       plotAreaEl.appendChild(pin);
@@ -201,6 +263,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="tooltip-poster" onerror="this.style.display='none'">`
       : '';
 
+    // Tags in tooltip
+    const movieTags = Array.isArray(movie.tags) ? movie.tags : [];
+    const tagsHtml = movieTags.length > 0
+      ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${movieTags.slice(0, 4).map(t => `<span class="tag-link" style="pointer-events:none;font-size:10px;padding:1px 7px">${escapeHtml(t)}</span>`).join('')}</div>`
+      : '';
+
     tooltipEl.innerHTML = `
       <div class="tooltip-content">
         ${posterThumb}
@@ -210,6 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="tooltip-year">${escapeHtml(movie.year) || '—'}</div>
           </div>
           <div class="tooltip-badge q-${movie.quadrant}">${escapeHtml(movie.quadrantLabel)}</div>
+          ${tagsHtml}
           <div class="tooltip-stats">
             <div class="stat-row">
               <span class="stat-lbl">Quality (Story + Visuals):</span>
@@ -239,7 +308,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let left = pinRect.left - boardRect.left + (pinRect.width / 2);
     let top = pinRect.top - boardRect.top;
 
-    // If too close to right edge, shift left
     const tooltipWidth = 260;
     if (left + (tooltipWidth / 2) > boardRect.width - 15) {
       left = boardRect.width - tooltipWidth - 15;
@@ -249,7 +317,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       left = left - (tooltipWidth / 2);
     }
 
-    // If too close to top edge, show below pin
     if (top < 160) {
       top = top + pinRect.height + 10;
     } else {
@@ -275,11 +342,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         pin.classList.remove('highlighted');
       } else if (matchSearch) {
         pin.classList.remove('dimmed');
-        if (searchTerm) {
-          pin.classList.add('highlighted');
-        } else {
-          pin.classList.remove('highlighted');
-        }
+        if (searchTerm) pin.classList.add('highlighted');
+        else pin.classList.remove('highlighted');
       } else {
         pin.classList.add('dimmed');
         pin.classList.remove('highlighted');
@@ -287,7 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Event Listeners for Filters & Modes
+  // Quadrant filter buttons
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       filterBtns.forEach(b => b.classList.remove('active'));
@@ -314,12 +378,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPins();
   }
 
-  if (btnPosters) {
-    btnPosters.addEventListener('click', () => setView('posters'));
-  }
-  if (btnDots) {
-    btnDots.addEventListener('click', () => setView('dots'));
-  }
+  if (btnPosters) btnPosters.addEventListener('click', () => setView('posters'));
+  if (btnDots) btnDots.addEventListener('click', () => setView('dots'));
 
+  // Initial render
+  renderTagFilterBar();
+  matrixCountEl.textContent = `${rawMovies.length} movie${rawMovies.length !== 1 ? 's' : ''} plotted`;
   setView(currentView);
 });

@@ -61,6 +61,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     genresEl.innerHTML = movie.genres.map(g => `<span class="badge bg-secondary opacity-75">${escapeHtml(g)}</span>`).join('');
   }
 
+  // Tags — clickable chips that deep-link to Library filtered by that tag
+  const tagsEl = document.getElementById('detail-tags');
+  if (tagsEl && Array.isArray(movie.tags) && movie.tags.length > 0) {
+    tagsEl.innerHTML = movie.tags.map(t =>
+      `<a href="index.html?tag=${encodeURIComponent(t)}" class="tag-link">${escapeHtml(t)}</a>`
+    ).join('');
+  }
+
   // Overview / Synopsis
   const overviewSection = document.getElementById('overview-section');
   const overviewText = document.getElementById('overview-text');

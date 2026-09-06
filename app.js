@@ -173,6 +173,7 @@ class MovieStore {
       actionScore: Number(row.action_score),
       funScore: Number(row.fun_score),
       biases: Array.isArray(row.biases) ? row.biases : [],
+      tags: Array.isArray(row.tags) ? row.tags : [],
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };
@@ -244,6 +245,7 @@ class MovieStore {
           action_score: Number(data.actionScore),
           fun_score: Number(data.funScore),
           biases: data.biases || [],
+          tags: data.tags || [],
           user_id: user.id,
           updated_at: new Date().toISOString()
         };
@@ -306,6 +308,7 @@ class MovieStore {
       actionScore: Number(data.actionScore) || 5,
       funScore: Number(data.funScore) || 5,
       biases: data.biases || [],
+      tags: data.tags || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -326,5 +329,16 @@ class MovieStore {
     }
     const movies = this._loadLocal().filter(m => String(m.id) !== String(id));
     this._saveLocal(movies);
+  }
+
+  // Returns a sorted array of all unique tags across the given movie list
+  static getAllTags(movies) {
+    const set = new Set();
+    (movies || []).forEach(m => {
+      (Array.isArray(m.tags) ? m.tags : []).forEach(t => {
+        if (t && t.trim()) set.add(t.trim().toLowerCase());
+      });
+    });
+    return Array.from(set).sort();
   }
 }

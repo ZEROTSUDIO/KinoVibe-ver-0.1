@@ -35,8 +35,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleContainer = document.getElementById('tier-view-toggle');
   const btnPosters = document.getElementById('toggle-posters');
   const btnTitles = document.getElementById('toggle-titles');
+  const tagFilterBar = document.getElementById('tag-filter-bar');
 
   let currentView = localStorage.getItem('kinovibe_tier_view') || 'posters';
+  let activeTags = new Set();
+
+  // Read URL param (e.g. tiers.html?tag=rewatchable)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTag = urlParams.get('tag');
+  if (urlTag) activeTags.add(urlTag.trim().toLowerCase());
 
   // Show spinner
   if (loadingStateEl) {
@@ -47,23 +54,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   emptyStateEl.classList.add('hidden');
   if (toggleContainer) toggleContainer.classList.add('hidden');
 
-  let movies = [];
+  let allMovies = [];
   try {
-    movies = await MovieStore.getAll();
+    allMovies = await MovieStore.getAll();
   } catch (err) {
     console.error('Failed to load movies for tier list:', err);
-    movies = [];
+    allMovies = [];
   } finally {
-    // Always hide spinner
     if (loadingStateEl) {
       loadingStateEl.classList.add('hidden');
       loadingStateEl.style.display = 'none';
     }
   }
 
-  tierCountEl.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} ranked`;
-
-  if (movies.length === 0) {
+  if (allMovies.length === 0) {
     emptyStateEl.classList.remove('hidden');
     tierListEl.classList.add('hidden');
     return;
@@ -73,31 +77,93 @@ document.addEventListener('DOMContentLoaded', async () => {
   tierListEl.classList.remove('hidden');
   if (toggleContainer) toggleContainer.classList.remove('hidden');
 
-  const tierMap = new Map();
-  TIERS.forEach(t => tierMap.set(t.label, []));
-
-  movies.forEach(movie => {
-    const scores = calcScores(movie.storyScore, movie.visualScore, movie.actionScore, movie.funScore, movie.biases || []);
-    const finalScore = Number(scores.final);
-    
-    const tier = TIERS.find(t => finalScore >= t.min);
-    if (tier) {
-      tierMap.get(tier.label).push({ ...movie, finalScore });
+  // ─── Tag Filter Bar ──────────────────────────────────
+  function renderTagFilterBar() {
+    const allTags = MovieStore.getAllTags(allMovies);
+    if (allTags.length === 0) {
+      tagFilterBar.classList.add('hidden');
+      return;
     }
-  });
+    tagFilterBar.classList.remove('hidden');
 
-  TIERS.forEach(t => {
-    const tierMovies = tierMap.get(t.label);
-    tierMovies.sort((a, b) => {
-      const scoreDiff = (b.finalScore ?? 0) - (a.finalScore ?? 0);
-      if (scoreDiff !== 0) {
-        return scoreDiff;
-      }
-      return (a.title || '').localeCompare(b.title || '');
+    tagFilterBar.innerHTML = `
+      <button class="tag-pill ${activeTags.size === 0 ? 'active' : ''}" data-tag="__all__">
+        All <span class="tag-pill-count">${allMovies.length}</span>
+      </button>
+      ${allTags.map(tag => {
+        const isActive = activeTags.has(tag);
+        const cnt = allMovies.filter(m => Array.isArray(m.tags) && m.tags.includes(tag)).length;
+        return `<button class="tag-pill ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)} <span class="tag-pill-count">${cnt}</span>
+        </button>`;
+      }).join('')}
+    `;
+
+    tagFilterBar.querySelectorAll('.tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag;
+        if (tag === '__all__') {
+          activeTags.clear();
+        } else {
+          activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
+        }
+        if (activeTags.size === 1) {
+          const [t] = activeTags;
+          history.replaceState(null, '', `?tag=${encodeURIComponent(t)}`);
+        } else {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        renderTagFilterBar();
+        setView(currentView);
+      });
     });
-  });
+  }
+
+  function getFilteredMovies() {
+    if (activeTags.size === 0) return allMovies;
+    return allMovies.filter(m => {
+      const movieTags = Array.isArray(m.tags) ? m.tags : [];
+      for (const t of activeTags) {
+        if (!movieTags.includes(t)) return false;
+      }
+      return true;
+    });
+  }
+  // ────────────────────────────────────────────────────
+
+  function buildTierMap(movies) {
+    const tierMap = new Map();
+    TIERS.forEach(t => tierMap.set(t.label, []));
+
+    movies.forEach(movie => {
+      const scores = calcScores(movie.storyScore, movie.visualScore, movie.actionScore, movie.funScore, movie.biases || []);
+      const finalScore = Number(scores.final);
+      const tier = TIERS.find(t => finalScore >= t.min);
+      if (tier) tierMap.get(tier.label).push({ ...movie, finalScore });
+    });
+
+    TIERS.forEach(t => {
+      const tierMovies = tierMap.get(t.label);
+      tierMovies.sort((a, b) => {
+        const scoreDiff = (b.finalScore ?? 0) - (a.finalScore ?? 0);
+        return scoreDiff !== 0 ? scoreDiff : (a.title || '').localeCompare(b.title || '');
+      });
+    });
+
+    return tierMap;
+  }
 
   function renderTierList(mode) {
+    const filtered = getFilteredMovies();
+    const tierMap = buildTierMap(filtered);
+
+    // Update count
+    if (activeTags.size > 0) {
+      tierCountEl.textContent = `${filtered.length} / ${allMovies.length} movie${allMovies.length !== 1 ? 's' : ''} ranked`;
+    } else {
+      tierCountEl.textContent = `${allMovies.length} movie${allMovies.length !== 1 ? 's' : ''} ranked`;
+    }
+
     tierListEl.className = mode === 'posters' ? 'view-posters' : 'view-titles';
     tierListEl.innerHTML = '';
 
@@ -159,12 +225,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTierList(mode);
   }
 
-  if (btnPosters) {
-    btnPosters.addEventListener('click', () => setView('posters'));
-  }
-  if (btnTitles) {
-    btnTitles.addEventListener('click', () => setView('titles'));
-  }
+  if (btnPosters) btnPosters.addEventListener('click', () => setView('posters'));
+  if (btnTitles) btnTitles.addEventListener('click', () => setView('titles'));
 
+  renderTagFilterBar();
   setView(currentView);
 });

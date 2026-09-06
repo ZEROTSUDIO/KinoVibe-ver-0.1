@@ -35,12 +35,119 @@ document.addEventListener('DOMContentLoaded', async () => {
   const genresInput = document.getElementById('genres');
   const runtimeInput = document.getElementById('runtime');
 
+  // Tag Elements
+  const tagInputArea = document.getElementById('tag-input-area');
+  const tagInputField = document.getElementById('tag-input-field');
+  const tagSuggestions = document.getElementById('tag-suggestions');
+
   const sliders = [
     { slider: storySlider, valEl: document.getElementById('story-val') },
     { slider: visualsSlider, valEl: document.getElementById('visuals-val') },
     { slider: actionSlider, valEl: document.getElementById('action-val') },
     { slider: funSlider, valEl: document.getElementById('fun-val') },
   ];
+
+  // ─── Tag chip state ───────────────────────────────────
+  let currentTags = [];
+  let allExistingTags = []; // pool from all user movies for autocomplete
+
+  // Load existing tags pool for autocomplete (non-blocking)
+  try {
+    const allMovies = await MovieStore.getAll();
+    allExistingTags = MovieStore.getAllTags(allMovies);
+  } catch (e) {
+    allExistingTags = [];
+  }
+
+  function renderTagChips() {
+    // Remove existing chips (leave the input field & suggestions in place)
+    tagInputArea.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    currentTags.forEach(tag => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${escapeHtml(tag)}<button type="button" class="tag-chip-remove" data-tag="${escapeHtml(tag)}" aria-label="Remove ${escapeHtml(tag)}">×</button>`;
+      tagInputArea.insertBefore(chip, tagInputField);
+    });
+  }
+
+  function addTag(raw) {
+    const tag = raw.trim().toLowerCase().replace(/,/g, '').replace(/\s+/g, '-');
+    if (!tag || currentTags.includes(tag)) return;
+    currentTags.push(tag);
+    renderTagChips();
+  }
+
+  function removeTag(tag) {
+    currentTags = currentTags.filter(t => t !== tag);
+    renderTagChips();
+  }
+
+  function getTags() {
+    return [...currentTags];
+  }
+
+  if (tagInputArea) {
+    // Chip remove delegation
+    tagInputArea.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tag-chip-remove');
+      if (btn) { e.stopPropagation(); removeTag(btn.dataset.tag); }
+    });
+
+    // Click anywhere in the area focuses the text input
+    tagInputArea.addEventListener('click', () => tagInputField && tagInputField.focus());
+  }
+
+  if (tagInputField) {
+    // Enter or comma commits a tag
+    tagInputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = tagInputField.value.trim();
+        if (val) { addTag(val); tagInputField.value = ''; hideSuggestions(); }
+      } else if (e.key === ',') {
+        e.preventDefault();
+        const val = tagInputField.value.trim();
+        if (val) { addTag(val); tagInputField.value = ''; hideSuggestions(); }
+      } else if (e.key === 'Backspace' && tagInputField.value === '' && currentTags.length > 0) {
+        removeTag(currentTags[currentTags.length - 1]);
+      }
+    });
+
+    // Autocomplete suggestions
+    tagInputField.addEventListener('input', () => {
+      const query = tagInputField.value.trim().toLowerCase();
+      if (!query) { hideSuggestions(); return; }
+      const matches = allExistingTags.filter(t => t.startsWith(query) && !currentTags.includes(t));
+      if (matches.length === 0) { hideSuggestions(); return; }
+      tagSuggestions.innerHTML = matches.slice(0, 8).map(t =>
+        `<div class="tag-suggestion-item" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</div>`
+      ).join('');
+      tagSuggestions.classList.remove('hidden');
+    });
+  }
+
+  if (tagSuggestions) {
+    tagSuggestions.addEventListener('click', (e) => {
+      const item = e.target.closest('.tag-suggestion-item');
+      if (item) {
+        addTag(item.dataset.tag);
+        tagInputField.value = '';
+        hideSuggestions();
+        tagInputField.focus();
+      }
+    });
+  }
+
+  function hideSuggestions() {
+    if (!tagSuggestions) return;
+    tagSuggestions.classList.add('hidden');
+    tagSuggestions.innerHTML = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    if (tagInputArea && !tagInputArea.contains(e.target)) hideSuggestions();
+  });
+  // ─────────────────────────────────────────────────────
 
   // If edit mode, load existing movie
   if (mode === 'edit') {
@@ -76,6 +183,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load existing biases
     (movie.biases || []).forEach(b => addBiasRow(b.amount, b.reason));
+
+    // Load existing tags
+    (movie.tags || []).forEach(t => addTag(t));
   }
 
   // TMDB API Key settings button — hidden if no longer needed, kept for legacy HTML
@@ -299,7 +409,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       visualScore: parseFloat(visualsSlider.value),
       actionScore: parseFloat(actionSlider.value),
       funScore: parseFloat(funSlider.value),
-      biases: getBiases()
+      biases: getBiases(),
+      tags: getTags()
     };
     
     if (mode === 'edit') {

@@ -99,6 +99,16 @@
       <div id="bias-container"></div>
       <button type="button" class="add-bias-btn" id="add-bias-btn">+ Add bias</button>
 
+      <div class="section-title" style="margin-top:1.5rem">Tags <span class="optional">(optional)</span></div>
+      <div class="form-group">
+        <div class="tag-input-area" id="tag-input-area">
+          <!-- chips rendered here by form.js -->
+          <input type="text" class="tag-input-field" id="tag-input-field" placeholder="Type a tag, press Enter or comma…" autocomplete="off">
+          <div class="tag-suggestions hidden" id="tag-suggestions"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Use tags like <em>rewatchable</em>, <em>sci-fi</em>, <em>seen-with-friends</em> to filter later</div>
+      </div>
+
       <div class="score-preview" id="score-preview">
         <div>
           <div class="score-label">Calculated score</div>
