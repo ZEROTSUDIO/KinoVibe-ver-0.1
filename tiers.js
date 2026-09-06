@@ -75,13 +75,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     const tier = TIERS.find(t => finalScore >= t.min);
     if (tier) {
-      tierMap.get(tier.label).push(movie);
+      tierMap.get(tier.label).push({ ...movie, finalScore });
     }
   });
 
   TIERS.forEach(t => {
     const tierMovies = tierMap.get(t.label);
-    tierMovies.sort((a, b) => a.title.localeCompare(b.title));
+    tierMovies.sort((a, b) => {
+      const scoreDiff = (b.finalScore ?? 0) - (a.finalScore ?? 0);
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
+      return (a.title || '').localeCompare(b.title || '');
+    });
   });
 
   tierListEl.innerHTML = '';
