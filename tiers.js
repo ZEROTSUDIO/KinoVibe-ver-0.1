@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tierCountEl = document.getElementById('tier-count');
   const tierListEl = document.getElementById('tier-list');
   const emptyStateEl = document.getElementById('empty-state');
+  const toggleContainer = document.getElementById('tier-view-toggle');
+  const btnPosters = document.getElementById('toggle-posters');
+  const btnTitles = document.getElementById('toggle-titles');
+
+  let currentView = localStorage.getItem('kinovibe_tier_view') || 'posters';
 
   // Show spinner
   if (loadingStateEl) {
@@ -40,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   tierListEl.classList.add('hidden');
   emptyStateEl.classList.add('hidden');
+  if (toggleContainer) toggleContainer.classList.add('hidden');
 
   let movies = [];
   try {
@@ -55,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  tierCountEl.textContent = `${movies.length} movies ranked`;
+  tierCountEl.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} ranked`;
 
   if (movies.length === 0) {
     emptyStateEl.classList.remove('hidden');
@@ -65,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   emptyStateEl.classList.add('hidden');
   tierListEl.classList.remove('hidden');
+  if (toggleContainer) toggleContainer.classList.remove('hidden');
 
   const tierMap = new Map();
   TIERS.forEach(t => tierMap.set(t.label, []));
@@ -90,27 +97,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  tierListEl.innerHTML = '';
-  
-  TIERS.forEach(t => {
-    const tierMovies = tierMap.get(t.label);
-    const isEmpty = tierMovies.length === 0;
-    
-    let moviesHtml = '';
-    tierMovies.forEach(movie => {
-      moviesHtml += `<a href="view.html?id=${movie.id}" class="tier-movie">${escapeHtml(movie.title)} (${movie.year})</a>`;
-    });
+  function renderTierList(mode) {
+    tierListEl.className = mode === 'posters' ? 'view-posters' : 'view-titles';
+    tierListEl.innerHTML = '';
 
-    const tierRow = document.createElement('div');
-    tierRow.className = `tier-row ${isEmpty ? 'tier-empty' : ''}`;
-    
-    tierRow.innerHTML = `
-      <div class="tier-label" style="background: ${t.color}">${t.label}</div>
-      <div class="tier-movies">
-        ${moviesHtml}
-      </div>
-    `;
-    
-    tierListEl.appendChild(tierRow);
-  });
+    TIERS.forEach(t => {
+      const tierMovies = tierMap.get(t.label);
+      const isEmpty = tierMovies.length === 0;
+      
+      let moviesHtml = '';
+      tierMovies.forEach(movie => {
+        const formattedScore = typeof formatScore === 'function' ? formatScore(movie.finalScore) : movie.finalScore;
+        const level = typeof getScoreLevel === 'function' ? getScoreLevel(movie.finalScore) : '';
+        const titleYear = `${escapeHtml(movie.title)} (${escapeHtml(movie.year) || '—'})`;
+        const tooltip = `${titleYear} · Score: ${formattedScore}`;
+
+        if (mode === 'posters') {
+          const posterContent = movie.posterUrl
+            ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="tier-poster-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+               <div class="tier-poster-fallback" style="display:none">
+                 <div class="tier-poster-fallback-letter">${escapeHtml((movie.title || '?')[0])}</div>
+                 <div class="tier-poster-fallback-title">${escapeHtml(movie.title || '')}</div>
+               </div>`
+            : `<div class="tier-poster-fallback">
+                 <div class="tier-poster-fallback-letter">${escapeHtml((movie.title || '?')[0])}</div>
+                 <div class="tier-poster-fallback-title">${escapeHtml(movie.title || '')}</div>
+               </div>`;
+
+          moviesHtml += `
+            <a href="view.html?id=${movie.id}" class="tier-poster-card" title="${tooltip}">
+              ${posterContent}
+              <div class="tier-poster-score ${level}">${formattedScore}</div>
+            </a>
+          `;
+        } else {
+          moviesHtml += `<a href="view.html?id=${movie.id}" class="tier-movie" title="${tooltip}">${titleYear}</a>`;
+        }
+      });
+
+      const tierRow = document.createElement('div');
+      tierRow.className = `tier-row ${isEmpty ? 'tier-empty' : ''}`;
+      
+      tierRow.innerHTML = `
+        <div class="tier-label" style="background: ${t.color}">${t.label}</div>
+        <div class="tier-movies">
+          ${moviesHtml}
+        </div>
+      `;
+      
+      tierListEl.appendChild(tierRow);
+    });
+  }
+
+  function setView(mode) {
+    currentView = mode;
+    localStorage.setItem('kinovibe_tier_view', mode);
+
+    if (btnPosters) btnPosters.classList.toggle('active', mode === 'posters');
+    if (btnTitles) btnTitles.classList.toggle('active', mode === 'titles');
+
+    renderTierList(mode);
+  }
+
+  if (btnPosters) {
+    btnPosters.addEventListener('click', () => setView('posters'));
+  }
+  if (btnTitles) {
+    btnTitles.addEventListener('click', () => setView('titles'));
+  }
+
+  setView(currentView);
 });

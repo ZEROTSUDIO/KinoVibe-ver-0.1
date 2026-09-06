@@ -846,6 +846,48 @@ input[type='range']::-moz-range-thumb:hover {
 .loading-box.hidden { display: none !important; }
 
 /* ---- Tier List ---- */
+.tier-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.tier-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tier-view-btn .toggle-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.tier-view-btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tier-view-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.35);
+}
+
 .tier-row {
   display: flex;
   min-height: 60px;
@@ -854,6 +896,10 @@ input[type='range']::-moz-range-thumb:hover {
   overflow: hidden;
   margin-bottom: 8px;
   transition: opacity 0.2s;
+}
+
+.tier-list.view-posters .tier-row {
+  min-height: 116px;
 }
 
 .tier-row.tier-empty {
@@ -883,6 +929,12 @@ input[type='range']::-moz-range-thumb:hover {
   background: var(--bg-card);
 }
 
+.tier-list.view-posters .tier-movies {
+  gap: 8px;
+  padding: 8px 10px;
+  align-items: flex-start;
+}
+
 .tier-movie {
   display: inline-block;
   padding: 6px 14px;
@@ -899,7 +951,110 @@ input[type='range']::-moz-range-thumb:hover {
   color: var(--accent-light);
 }
 
+/* Tier Poster Cards */
+.tier-poster-card {
+  position: relative;
+  width: 68px;
+  height: 102px;
+  border-radius: 6px;
+  overflow: hidden;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16103a 50%, #0d0d1a 100%);
+  border: 1px solid var(--border-subtle);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tier-poster-card:hover {
+  transform: translateY(-3px) scale(1.04);
+  border-color: var(--border-accent);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.3);
+  z-index: 2;
+}
+
+.tier-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tier-poster-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  text-align: center;
+}
+
+.tier-poster-fallback-letter {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: rgba(124, 58, 237, 0.4);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.tier-poster-fallback-title {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.15;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tier-poster-score {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.tier-poster-score.high {
+  color: var(--score-high);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.tier-poster-score.mid {
+  color: var(--score-mid);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+
+.tier-poster-score.low {
+  color: var(--score-low);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
 @media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .tier-view-toggle {
+    align-self: flex-start;
+  }
+  .tier-view-btn {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+  }
   .tier-label {
     width: 48px;
     min-width: 48px;
@@ -908,6 +1063,13 @@ input[type='range']::-moz-range-thumb:hover {
   .tier-movie {
     font-size: 0.8rem;
     padding: 4px 10px;
+  }
+  .tier-poster-card {
+    width: 52px;
+    height: 78px;
+  }
+  .tier-list.view-posters .tier-row {
+    min-height: 88px;
   }
 }
 
