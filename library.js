@@ -107,11 +107,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (activeTags.size === 0) return allMovies;
     return allMovies.filter(m => {
       const movieTags = Array.isArray(m.tags) ? m.tags : [];
-      // AND: movie must have every active tag
+      // OR: movie shows if it has any active tag
       for (const t of activeTags) {
-        if (!movieTags.includes(t)) return false;
+        if (movieTags.includes(t)) return true;
       }
-      return true;
+      return false;
     });
   }
   // ────────────────────────────────────────────────────
