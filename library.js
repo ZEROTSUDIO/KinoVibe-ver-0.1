@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         : '';
 
       const card = document.createElement('div');
-      card.className = 'col-6 col-md-4 col-lg-3';
+      card.className = 'w-full flex flex-col';
       card.innerHTML = `
         <a href="view.html?id=${movie.id}" class="movie-card fade-in" style="--delay:${i * 0.05}s">
           <div class="movie-poster">${posterContent}</div>
