@@ -29,23 +29,35 @@
         <h1>Your Library</h1>
         <div class="subtitle" id="movie-count">0 movies logged</div>
       </div>
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+        <div class="relative w-full sm:w-56">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-kino-muted text-sm">🔍</span>
+          <input type="text" id="library-search" placeholder="Search title or year..." class="w-full bg-white/[0.04] border border-white/[0.08] focus:border-kino-accent focus:ring-1 focus:ring-kino-accent rounded-full pl-9 pr-8 py-2 text-sm text-kino-text placeholder-kino-muted outline-none transition">
+          <button type="button" id="library-search-clear" class="hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-kino-muted hover:text-white text-xs cursor-pointer">✕</button>
+        </div>
         <select class="form-select" id="sort-select" style="width:auto">
           <option value="newest">Newest first</option>
           <option value="highest">Highest score</option>
           <option value="lowest">Lowest score</option>
           <option value="title">Title A–Z</option>
         </select>
-        <a href="add.html" class="btn-primary" style="text-decoration:none">+ Add Movie</a>
+        <a href="add.html" class="btn-primary inline-flex items-center gap-1.5 whitespace-nowrap" style="text-decoration:none"><span>+</span> Add Movie</a>
       </div>
     </div>
 
     <!-- Tag Filter Bar — populated by library.js -->
     <div class="tag-filter-bar hidden" id="tag-filter-bar"></div>
 
-    <div class="loading-box hidden" id="loading-state">
-      <div class="spinner"></div>
-      <div>Loading your reviews...</div>
+    <!-- Skeleton Shimmer Loading Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12 hidden" id="loading-state">
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12 hidden" id="movie-grid"></div>
@@ -57,6 +69,26 @@
       <a href="add.html" class="btn-primary" style="text-decoration:none">Add your first movie</a>
     </div>
   </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-kino-surface/95 backdrop-blur-lg border-t border-white/[0.08] px-4 py-2 flex justify-around items-center">
+    <a href="index.html" class="flex flex-col items-center gap-1 text-xs text-kino-accent-light font-semibold">
+      <span class="text-base">🎬</span>
+      <span>Library</span>
+    </a>
+    <a href="tiers.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">🏆</span>
+      <span>Tiers</span>
+    </a>
+    <a href="matrix.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">🧭</span>
+      <span>Matrix</span>
+    </a>
+    <a href="add.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">➕</span>
+      <span>Add</span>
+    </a>
+  </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>

@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const genresEl = document.getElementById('detail-genres');
   if (genresEl && Array.isArray(movie.genres) && movie.genres.length > 0) {
-    genresEl.innerHTML = movie.genres.map(g => `<span class="badge bg-secondary opacity-75">${escapeHtml(g)}</span>`).join('');
+    genresEl.innerHTML = movie.genres.map(g => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.06] border border-white/[0.08] text-kino-secondary">${escapeHtml(g)}</span>`).join('');
   }
 
   // Tags — clickable chips that deep-link to Library filtered by that tag
@@ -77,16 +77,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     overviewSection.classList.remove('hidden');
   }
 
-  // Final score
+  // Final score with glow
   const finalEl = document.getElementById('detail-final-score');
   finalEl.textContent = formatScore(scores.final);
-  finalEl.classList.add('score-' + level);
+  const glowStyle = level === 'high' ? 'text-score-high drop-shadow-[0_0_20px_rgba(34,197,94,0.45)]' : (level === 'mid' ? 'text-score-mid drop-shadow-[0_0_20px_rgba(245,158,11,0.45)]' : 'text-score-low drop-shadow-[0_0_20px_rgba(239,68,68,0.45)]');
+  finalEl.className = `score-big ${glowStyle}`;
 
-  // Stat grid
+  // Stat grid numbers and animated meters
   document.getElementById('stat-story').textContent = movie.storyScore;
   document.getElementById('stat-visuals').textContent = movie.visualScore;
   document.getElementById('stat-action').textContent = movie.actionScore;
   document.getElementById('stat-fun').textContent = movie.funScore;
+
+  setTimeout(() => {
+    const mStory = document.getElementById('meter-story');
+    if (mStory) mStory.style.width = `${Math.min(100, Math.max(0, (Number(movie.storyScore) || 0) * 10))}%`;
+    const mVisuals = document.getElementById('meter-visuals');
+    if (mVisuals) mVisuals.style.width = `${Math.min(100, Math.max(0, (Number(movie.visualScore) || 0) * 10))}%`;
+    const mAction = document.getElementById('meter-action');
+    if (mAction) mAction.style.width = `${Math.min(100, Math.max(0, (Number(movie.actionScore) || 0) * 10))}%`;
+    const mFun = document.getElementById('meter-fun');
+    if (mFun) mFun.style.width = `${Math.min(100, Math.max(0, (Number(movie.funScore) || 0) * 10))}%`;
+  }, 100);
 
   // Score summary
   document.getElementById('base-score').textContent = formatScore(scores.base);

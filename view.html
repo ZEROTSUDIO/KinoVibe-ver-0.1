@@ -48,10 +48,26 @@
 
     <!-- Stat Grid -->
     <div class="stat-grid fade-in" style="--delay:0.1s" id="stat-grid">
-      <div class="stat-box"><div class="stat-num" id="stat-story">—</div><div class="stat-label">Story</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-visuals">—</div><div class="stat-label">Visuals</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-action">—</div><div class="stat-label">Action</div></div>
-      <div class="stat-box"><div class="stat-num" id="stat-fun">—</div><div class="stat-label">Fun</div></div>
+      <div class="stat-box">
+        <div class="stat-num text-sky-400" id="stat-story">—</div>
+        <div class="stat-label">Story</div>
+        <div class="stat-meter"><div class="stat-meter-fill story" id="meter-story" style="width:0%"></div></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num text-purple-400" id="stat-visuals">—</div>
+        <div class="stat-label">Visuals</div>
+        <div class="stat-meter"><div class="stat-meter-fill visuals" id="meter-visuals" style="width:0%"></div></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num text-orange-400" id="stat-action">—</div>
+        <div class="stat-label">Action</div>
+        <div class="stat-meter"><div class="stat-meter-fill action" id="meter-action" style="width:0%"></div></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num text-emerald-400" id="stat-fun">—</div>
+        <div class="stat-label">Fun</div>
+        <div class="stat-meter"><div class="stat-meter-fill fun" id="meter-fun" style="width:0%"></div></div>
+      </div>
     </div>
 
     <!-- Score Summary -->
@@ -84,6 +100,26 @@
       <button class="btn-danger" id="delete-btn">Delete</button>
     </div>
   </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-kino-surface/95 backdrop-blur-lg border-t border-white/[0.08] px-4 py-2 flex justify-around items-center">
+    <a href="index.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">🎬</span>
+      <span>Library</span>
+    </a>
+    <a href="tiers.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">🏆</span>
+      <span>Tiers</span>
+    </a>
+    <a href="matrix.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">🧭</span>
+      <span>Matrix</span>
+    </a>
+    <a href="add.html" class="flex flex-col items-center gap-1 text-xs text-kino-secondary hover:text-white transition">
+      <span class="text-base">➕</span>
+      <span>Add</span>
+    </a>
+  </nav>
 
   <!-- Delete Confirmation Modal -->
   <div class="modal-overlay" id="delete-modal">
