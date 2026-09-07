@@ -29,23 +29,27 @@
     - **Visuals** (cinematography, VFX, art direction, color grading)
     - **Action** (stunts, choreography, intensity, set pieces)
     - **Fun** (entertainment value, rewatchability, pacing)
-  - **Base Score**: Exact arithmetic mean of the four categories:
-    $$\text{Base Score} = \frac{\text{Story} + \text{Visuals} + \text{Action} + \text{Fun}}{4}$$
+  - **Base Score Formula**:
+    ```text
+    Base Score = (Story + Visuals + Action + Fun) / 4
+    ```
 
 - **🎯 Personal Bias Modifiers**:
   - Add custom positive or negative adjustments (e.g., `+1.0 Childhood Nostalgia`, `-0.5 Plot Hole`).
-  - **Final Score**:
-    $$\text{Final Score} = \operatorname{clamp}\left(0, 10, \frac{\text{Story} + \text{Visuals} + \text{Action} + \text{Fun} + \sum \text{Biases}}{4}\right)$$
+  - **Final Score Formula** (clamped between 0.0 and 10.0):
+    ```text
+    Final Score = clamp(0, 10, (Story + Visuals + Action + Fun + Total Biases) / 4)
+    ```
 
 - **🏆 Automatic Tier List**:
   - Automatically groups all your reviews into tiers based on final score:
-    - **S Tier**: $\ge 9.0$ (Masterpiece)
-    - **A Tier**: $8.0 - 8.9$ (Great)
-    - **B Tier**: $7.0 - 7.9$ (Good)
-    - **C Tier**: $6.0 - 6.9$ (Decent)
-    - **D Tier**: $5.0 - 5.9$ (Mediocre)
-    - **E Tier**: $4.0 - 4.9$ (Poor)
-    - **F Tier**: $< 4.0$ (Skip)
+    - **S Tier**: ≥ 9.0 *(Masterpiece)*
+    - **A Tier**: 8.0 – 8.9 *(Great)*
+    - **B Tier**: 7.0 – 7.9 *(Good)*
+    - **C Tier**: 6.0 – 6.9 *(Decent)*
+    - **D Tier**: 5.0 – 5.9 *(Mediocre)*
+    - **E Tier**: 4.0 – 4.9 *(Poor)*
+    - **F Tier**: < 4.0 *(Skip)*
 
 - **☁️ Supabase Cloud Sync & Security**:
   - Cloud PostgreSQL storage with **Row Level Security (RLS)** — users can only access their own records.
