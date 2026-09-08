@@ -185,7 +185,7 @@ a {
 }
 
 .movie-poster {
-  height: 200px;
+  aspect-ratio: 2 / 3;
   background: linear-gradient(145deg, #1a1a2e 0%, #16103a 50%, #0d0d1a 100%);
   display: flex;
   justify-content: center;
