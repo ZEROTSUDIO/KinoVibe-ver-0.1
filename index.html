@@ -3,64 +3,621 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Your Library — KinoVibe</title>
-  <meta name="description" content="Your personal movie review library. Rate films on Story, Visuals, Action, and Fun with a personal bias system.">
+  <title>KinoVibe — Personal Cinematic Movie Review & Tier Ranking Platform</title>
+  <meta name="description" content="Rate films on Story, Visuals, Action, and Fun. Factor in personal bias modifiers, link TMDB metadata, and watch your personal movie collection auto-rank into S-to-F tiers.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <nav class="navbar">
-    <div class="nav-inner">
-      <a href="index.html" class="nav-brand">
+  <!-- Sticky Landing Navbar -->
+  <nav class="landing-nav">
+    <div class="landing-nav-inner">
+      <a href="index.html" class="nav-brand" title="KinoVibe Home">
         <span class="brand-kino">Kino</span><span class="brand-vibe">Vibe</span>
       </a>
-      <div class="nav-links">
-        <a href="index.html" class="nav-link active">Library</a>
-        <a href="tiers.html" class="nav-link">Tiers</a>
-        <a href="matrix.html" class="nav-link">Matrix</a>
-        <a href="add.html" class="nav-link nav-add">+ Add Movie</a>
+
+      <!-- Desktop Nav Menu -->
+      <div class="landing-nav-menu" id="landing-nav-menu">
+        <a href="#scoring" class="landing-nav-item">Scoring System</a>
+        <a href="#screenshots" class="landing-nav-item">Screenshots</a>
+        <a href="#features" class="landing-nav-item">Features</a>
+        <a href="#how-it-works" class="landing-nav-item">How It Works</a>
       </div>
+
+      <!-- Auth State & Sign In Now CTA -->
+      <div class="landing-nav-actions" id="landing-nav-actions">
+        <a href="login.html" class="nav-signin-link">Sign In</a>
+        <a href="login.html" class="btn-nav-primary" id="nav-primary-cta">Sign In Now →</a>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        ☰
+      </button>
     </div>
   </nav>
 
-  <main class="page-container" style="max-width:1100px">
-    <div class="page-header">
-      <div>
-        <h1>Your Library</h1>
-        <div class="subtitle" id="movie-count">0 movies logged</div>
+  <!-- Hero Section -->
+  <header class="landing-hero">
+    <div class="landing-hero-inner">
+      <div class="hero-pill">
+        <span class="hero-pill-dot"></span>
+        <span>The Nuanced Movie Review & Tier Ranking Platform</span>
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <select class="form-select" id="sort-select" style="width:auto">
-          <option value="newest">Newest first</option>
-          <option value="highest">Highest score</option>
-          <option value="lowest">Lowest score</option>
-          <option value="title">Title A–Z</option>
-        </select>
-        <a href="add.html" class="btn-primary" style="text-decoration:none">+ Add Movie</a>
+
+      <h1 class="hero-title">
+        Rate Films Beyond Simple Stars.<br>
+        <span class="hero-title-gradient">Score Nuance. Add Biases. Auto-Rank Tiers.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Flat star ratings fail because films are multi-dimensional. KinoVibe rates films across 
+        <strong>Story</strong>, <strong>Visuals</strong>, <strong>Action</strong>, and <strong>Fun</strong>, 
+        factors in your personal quirks with custom <strong>Bias Modifiers</strong>, and automatically 
+        assembles your collection into an <strong>S-to-F Tier List</strong>.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="login.html" id="hero-primary-cta" class="btn-hero-primary">
+          Sign In Now <span>→</span>
+        </a>
+        <a href="login.html?mode=signup" id="hero-secondary-cta" class="btn-hero-secondary">
+          Create Free Account
+        </a>
+        <a href="#screenshots" class="btn-hero-ghost">
+          See Screenshots ↓
+        </a>
+      </div>
+
+      <!-- Floating Interactive Hero Preview Card -->
+      <div class="hero-visual-container">
+        <div class="hero-visual-card">
+          <div class="hero-card-header">
+            <div class="window-dots">
+              <span class="window-dot dot-red"></span>
+              <span class="window-dot dot-yellow"></span>
+              <span class="window-dot dot-green"></span>
+            </div>
+            <span class="hero-card-tag">✨ Sample KinoVibe Review</span>
+            <span style="font-size:11px;color:var(--text-muted)">Interactive Formula</span>
+          </div>
+
+          <div class="hero-card-body">
+            <div class="hero-movie-poster">
+              <div class="hero-poster-icon">🪐</div>
+              <div class="hero-poster-title">Dune: Part Two</div>
+              <div class="hero-poster-year">2024 · Sci-Fi</div>
+            </div>
+
+            <div class="hero-movie-details">
+              <div class="hero-movie-top">
+                <div>
+                  <h3 class="hero-movie-heading">Dune: Part Two (2024)</h3>
+                  <div class="hero-movie-sub">Directed by Denis Villeneuve · 166 min · 4K IMAX</div>
+                </div>
+                <div class="hero-tier-badge">
+                  <span>🏆</span> S TIER · 9.4
+                </div>
+              </div>
+
+              <!-- 4 Scoring Metrics -->
+              <div class="hero-scores-row">
+                <div class="hero-score-chip">
+                  <div class="hero-chip-name">Story</div>
+                  <div class="hero-chip-num">9.0</div>
+                </div>
+                <div class="hero-score-chip">
+                  <div class="hero-chip-name">Visuals</div>
+                  <div class="hero-chip-num" style="color:#a78bfa">10.0</div>
+                </div>
+                <div class="hero-score-chip">
+                  <div class="hero-chip-name">Action</div>
+                  <div class="hero-chip-num" style="color:#fb923c">9.5</div>
+                </div>
+                <div class="hero-score-chip">
+                  <div class="hero-chip-name">Fun</div>
+                  <div class="hero-chip-num" style="color:#facc15">9.0</div>
+                </div>
+              </div>
+
+              <!-- Personal Biases Row -->
+              <div class="hero-biases-row">
+                <span style="font-size:12px;color:var(--text-muted);font-weight:600">Personal Biases:</span>
+                <span class="hero-bias-pill bias-pos">+1.0 IMAX Experience</span>
+                <span class="hero-bias-pill bias-pos">+0.5 Hans Zimmer Score</span>
+                <span class="hero-bias-pill bias-neg">-0.2 Pacing in Act II</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  </header>
 
-    <!-- Tag Filter Bar — populated by library.js -->
-    <div class="tag-filter-bar hidden" id="tag-filter-bar"></div>
+  <!-- Section: What is KinoVibe? / Scoring Philosophy -->
+  <section class="landing-section landing-section-alt" id="scoring">
+    <div class="landing-container">
+      <div class="section-header">
+        <span class="section-pill">Why Star Ratings Fail</span>
+        <h2 class="section-title">The 4-Pillar Scoring Formula</h2>
+        <p class="section-desc">
+          A generic 7/10 or 3.5 stars tells you nothing. A film can feature jaw-dropping cinematography with weak dialogue, 
+          or an absurd storyline that delivers unmatched entertainment. KinoVibe captures every dimension.
+        </p>
+      </div>
 
-    <div class="loading-box hidden" id="loading-state">
-      <div class="spinner"></div>
-      <div>Loading your reviews...</div>
+      <!-- 4 Pillars Cards -->
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon-box icon-story">📖</div>
+          <h3 class="pillar-title">Story & Script</h3>
+          <p class="pillar-desc">Narrative depth, screenplay, dialogue, pacing, emotional impact, and character arcs.</p>
+          <div class="pillar-range">Score: 0.0 – 10.0</div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box icon-visuals">🎨</div>
+          <h3 class="pillar-title">Visuals & Craft</h3>
+          <p class="pillar-desc">Cinematography, color grading, art direction, framing, VFX, lighting, and camera movement.</p>
+          <div class="pillar-range">Score: 0.0 – 10.0</div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box icon-action">⚡</div>
+          <h3 class="pillar-title">Action & Intensity</h3>
+          <p class="pillar-desc">Stunt choreography, suspense, set pieces, visceral energy, and physical storytelling.</p>
+          <div class="pillar-range">Score: 0.0 – 10.0</div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon-box icon-fun">🍿</div>
+          <h3 class="pillar-title">Fun & Entertainment</h3>
+          <p class="pillar-desc">Rewatchability, vibe, pure joy, emotional resonance, and how much you enjoyed the ride.</p>
+          <div class="pillar-range">Score: 0.0 – 10.0</div>
+        </div>
+      </div>
+
+      <!-- Formula & Bias Explainer Showcase -->
+      <div class="formula-showcase">
+        <div>
+          <h3 class="formula-info-title">The Secret Sauce: Personal Bias Modifiers</h3>
+          <p class="formula-info-desc">
+            No movie review is truly objective. You might love a film because of childhood nostalgia, or hate it because of an annoying plot hole.
+            Instead of hiding your biases, KinoVibe lets you declare them transparently.
+          </p>
+          <div class="formula-box">
+            <div>// Calculated Base Score</div>
+            <div>Base Score = (Story + Visuals + Action + Fun) / 4</div>
+            <div style="margin-top:8px">// Final Score with Custom Biases</div>
+            <div style="color:#4ade80">Final Score = clamp(0, 10, (Total Metrics + Total Biases) / 4)</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:12px">Real World Bias Examples:</div>
+          <div class="formula-examples-list">
+            <div class="formula-example-item">
+              <span>📼 Childhood 90s Nostalgia</span>
+              <span style="color:#4ade80;font-weight:700">+1.0</span>
+            </div>
+            <div class="formula-example-item">
+              <span>🎵 Iconic Musical Score</span>
+              <span style="color:#4ade80;font-weight:700">+0.8</span>
+            </div>
+            <div class="formula-example-item">
+              <span>🕳️ Glaring Third-Act Plot Hole</span>
+              <span style="color:#f87171;font-weight:700">-0.7</span>
+            </div>
+            <div class="formula-example-item">
+              <span>🤖 Jarring CGI Artifacts</span>
+              <span style="color:#f87171;font-weight:700">-0.5</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <div class="row g-3 mb-5 hidden" id="movie-grid"></div>
+  <!-- Section: Screenshot Showcase (with Placeholders) -->
+  <section class="screenshots-section" id="screenshots">
+    <div class="landing-container">
+      <div class="section-header">
+        <span class="section-pill">See It in Action</span>
+        <h2 class="section-title">A Dark, Cinematic Interface Built for Cinephiles</h2>
+        <p class="section-desc">
+          Clean OLED dark palette, fluid animations, instant TMDB lookup, and zero clutter. 
+          Switch tabs below to preview the core screens.
+        </p>
+      </div>
 
-    <div class="empty-state hidden" id="empty-state">
-      <div class="empty-icon">🎬</div>
-      <div class="empty-title">No movies yet</div>
-      <div class="empty-subtitle">Start building your personal review library</div>
-      <a href="add.html" class="btn-primary" style="text-decoration:none">Add your first movie</a>
+      <!-- Tab Switcher -->
+      <div class="screenshot-tabs" role="tablist">
+        <button class="screenshot-tab-btn active" data-tab="library" role="tab" aria-selected="true">
+          <span>🎬</span> Library Grid
+        </button>
+        <button class="screenshot-tab-btn" data-tab="review" role="tab" aria-selected="false">
+          <span>📝</span> Nuanced Scoring
+        </button>
+        <button class="screenshot-tab-btn" data-tab="tiers" role="tab" aria-selected="false">
+          <span>🏆</span> S-to-F Tier List
+        </button>
+        <button class="screenshot-tab-btn" data-tab="matrix" role="tab" aria-selected="false">
+          <span>🧭</span> 2D Vibe Matrix
+        </button>
+      </div>
+
+      <!-- Browser Mockup Window -->
+      <div class="mockup-window">
+        <div class="mockup-titlebar">
+          <div class="mockup-controls">
+            <span class="window-dot dot-red"></span>
+            <span class="window-dot dot-yellow"></span>
+            <span class="window-dot dot-green"></span>
+          </div>
+          <div class="mockup-address-bar" id="mockup-address">
+            kinovibe.app/library
+          </div>
+          <div class="mockup-action-badge" id="mockup-badge">
+            Library View
+          </div>
+        </div>
+
+        <div class="mockup-viewport">
+          <!-- 
+            REPLACE PLACEHOLDER INSTRUCTION:
+            When you have your real screenshots, save them to:
+            - screenshots/library.png
+            - screenshots/review.png
+            - screenshots/tiers.png
+            - screenshots/matrix.png
+            The landing.js script will automatically load them and replace these wireframes!
+          -->
+          <img id="mockup-image" class="mockup-image" style="display:none;" alt="KinoVibe App Screenshot">
+
+          <!-- 1. Wireframe Fallback: Library -->
+          <div class="wireframe-container screenshot-wireframe" id="wf-library">
+            <div class="wireframe-topbar">
+              <span class="wireframe-brand"><span style="color:#fff">Kino</span><span style="color:var(--accent-light)">Vibe</span> Library</span>
+              <div class="wireframe-nav-pills">
+                <span class="wf-pill active"></span>
+                <span class="wf-pill"></span>
+                <span class="wf-pill"></span>
+              </div>
+            </div>
+            <div class="wf-library-grid">
+              <div class="wf-movie-card">
+                <div class="wf-card-poster">
+                  🎬
+                  <span class="wf-card-badge">9.4</span>
+                </div>
+                <div class="wf-card-meta">
+                  <div class="wf-card-title"></div>
+                  <div class="wf-card-tags"></div>
+                </div>
+              </div>
+              <div class="wf-movie-card">
+                <div class="wf-card-poster">
+                  🌌
+                  <span class="wf-card-badge" style="background:#60a5fa">8.7</span>
+                </div>
+                <div class="wf-card-meta">
+                  <div class="wf-card-title"></div>
+                  <div class="wf-card-tags"></div>
+                </div>
+              </div>
+              <div class="wf-movie-card">
+                <div class="wf-card-poster">
+                  ⚔️
+                  <span class="wf-card-badge" style="background:#fb923c">8.2</span>
+                </div>
+                <div class="wf-card-meta">
+                  <div class="wf-card-title"></div>
+                  <div class="wf-card-tags"></div>
+                </div>
+              </div>
+              <div class="wf-movie-card">
+                <div class="wf-card-poster">
+                  🚗
+                  <span class="wf-card-badge" style="background:#facc15">7.8</span>
+                </div>
+                <div class="wf-card-meta">
+                  <div class="wf-card-title"></div>
+                  <div class="wf-card-tags"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Wireframe Fallback: Review -->
+          <div class="wireframe-container screenshot-wireframe" id="wf-review" style="display:none;">
+            <div class="wireframe-topbar">
+              <span class="wireframe-brand">Score Breakdown & Bias Modifiers</span>
+              <div class="wireframe-nav-pills">
+                <span class="wf-pill"></span>
+                <span class="wf-pill active"></span>
+              </div>
+            </div>
+            <div class="wf-review-layout">
+              <div class="wf-review-hero">
+                <div style="font-size:36px;margin-bottom:8px">🪐</div>
+                <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">Dune: Part Two</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">2024 · 166 min</div>
+                <div class="hero-tier-badge" style="padding:4px 10px;font-size:12px">S TIER · 9.4</div>
+              </div>
+              <div class="wf-review-sliders">
+                <div class="wf-slider-row">
+                  <span class="wf-slider-label">Story</span>
+                  <div class="wf-slider-bar"><div class="wf-slider-fill" style="width:90%"></div></div>
+                  <span class="wf-slider-val">9.0</span>
+                </div>
+                <div class="wf-slider-row">
+                  <span class="wf-slider-label">Visuals</span>
+                  <div class="wf-slider-bar"><div class="wf-slider-fill" style="width:100%;background:#a78bfa"></div></div>
+                  <span class="wf-slider-val">10.0</span>
+                </div>
+                <div class="wf-slider-row">
+                  <span class="wf-slider-label">Action</span>
+                  <div class="wf-slider-bar"><div class="wf-slider-fill" style="width:95%;background:#fb923c"></div></div>
+                  <span class="wf-slider-val">9.5</span>
+                </div>
+                <div class="wf-slider-row">
+                  <span class="wf-slider-label">Fun</span>
+                  <div class="wf-slider-bar"><div class="wf-slider-fill" style="width:90%;background:#facc15"></div></div>
+                  <span class="wf-slider-val">9.0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Wireframe Fallback: Tiers -->
+          <div class="wireframe-container screenshot-wireframe" id="wf-tiers" style="display:none;">
+            <div class="wireframe-topbar">
+              <span class="wireframe-brand">Automated S-to-F Tier Rankings</span>
+              <span style="font-size:12px;color:var(--text-muted)">Auto-calculated from final scores</span>
+            </div>
+            <div class="wf-tiers-layout">
+              <div class="wf-tier-row">
+                <div class="wf-tier-letter" style="background:#ef4444">S</div>
+                <div class="wf-tier-movies">
+                  <div class="wf-tier-thumb">🪐</div>
+                  <div class="wf-tier-thumb">🦇</div>
+                  <div class="wf-tier-thumb">⏳</div>
+                </div>
+              </div>
+              <div class="wf-tier-row">
+                <div class="wf-tier-letter" style="background:#f97316">A</div>
+                <div class="wf-tier-movies">
+                  <div class="wf-tier-thumb">⚔️</div>
+                  <div class="wf-tier-thumb">🕶️</div>
+                </div>
+              </div>
+              <div class="wf-tier-row">
+                <div class="wf-tier-letter" style="background:#eab308">B</div>
+                <div class="wf-tier-movies">
+                  <div class="wf-tier-thumb">🚗</div>
+                  <div class="wf-tier-thumb">🤠</div>
+                  <div class="wf-tier-thumb">🚀</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Wireframe Fallback: Matrix -->
+          <div class="wireframe-container screenshot-wireframe" id="wf-matrix" style="display:none;">
+            <div class="wireframe-topbar">
+              <span class="wireframe-brand">2D Vibe Matrix (Quality vs. Entertainment)</span>
+              <span style="font-size:12px;color:var(--text-muted)">Interactive Quadrant Scatter Map</span>
+            </div>
+            <div class="wf-matrix-grid">
+              <div class="wf-matrix-quadrant" style="border-right:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08)">
+                <span>💎 Hidden Gems (High Quality, Low Fun)</span>
+              </div>
+              <div class="wf-matrix-quadrant" style="border-bottom:1px solid rgba(255,255,255,0.08)">
+                <span style="text-align:right">👑 Masterpieces (High Quality & Fun)</span>
+              </div>
+              <div class="wf-matrix-quadrant" style="border-right:1px solid rgba(255,255,255,0.08)">
+                <span>🗑️ Skips (Low Quality, Low Fun)</span>
+              </div>
+              <div class="wf-matrix-quadrant">
+                <span style="text-align:right">🍿 Popcorn Flicks (Low Quality, High Fun)</span>
+              </div>
+
+              <!-- Plotted nodes in quadrants -->
+              <div class="wf-matrix-node" style="top:25%;right:25%;background:#22c55e" title="Masterpiece"></div>
+              <div class="wf-matrix-node" style="top:20%;right:38%;background:#a78bfa" title="Masterpiece"></div>
+              <div class="wf-matrix-node" style="bottom:25%;right:18%;background:#facc15" title="Popcorn Flick"></div>
+              <div class="wf-matrix-node" style="top:30%;left:22%;background:#60a5fa" title="Hidden Gem"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caption Below Mockup -->
+        <div class="screenshot-caption-box">
+          <div>
+            <div class="screenshot-caption-title" id="caption-title">Personal Movie Library & Smart Tag Filters</div>
+            <div class="screenshot-caption-desc" id="caption-desc">Browse your entire collection with ticket rating badges, sort by Newest, Rating, or Title, and multi-filter with AND tags.</div>
+          </div>
+          <div class="screenshot-user-tip">
+            📸 Drop your screenshots in the <code>screenshots/</code> folder anytime!
+          </div>
+        </div>
+      </div>
     </div>
-  </main>
+  </section>
 
+  <!-- Section: Key Features Grid -->
+  <section class="landing-section landing-section-alt" id="features">
+    <div class="landing-container">
+      <div class="section-header">
+        <span class="section-pill">Feature Rich</span>
+        <h2 class="section-title">Everything Built For Cinephiles</h2>
+        <p class="section-desc">
+          From high-resolution movie artwork to mathematical scoring precision, every detail is engineered for film lovers.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-box">
+          <div class="feature-icon-badge">⚡</div>
+          <h3 class="feature-box-title">TMDB 1-Click Autocomplete</h3>
+          <p class="feature-box-desc">
+            Type any film title and TMDB instantly populates high-res posters, full-bleed backdrops, release year, genres, overview, and runtime.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-badge">🏆</div>
+          <h3 class="feature-box-title">Zero-Effort S-to-F Tier Lists</h3>
+          <p class="feature-box-desc">
+            Stop dragging cards manually. Every film is mathematically classified into S, A, B, C, D, E, or F tiers the moment you rate it.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-badge">🧭</div>
+          <h3 class="feature-box-title">2D Vibe Matrix</h3>
+          <p class="feature-box-desc">
+            Plot your movies on an interactive scatter chart: Story/Visual Quality on the X-axis, Action/Fun on the Y-axis. Separate guilty pleasures from masterworks.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-badge">🏷️</div>
+          <h3 class="feature-box-title">Smart Multi-Tag Filtering</h3>
+          <p class="feature-box-desc">
+            Tag films by franchise, director, actor, mood, or <em>rewatchable</em>. The interactive tag filter uses strict AND-matching logic for instant discovery.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-badge">☁️</div>
+          <h3 class="feature-box-title">Supabase Cloud Sync & RLS</h3>
+          <p class="feature-box-desc">
+            Powered by Supabase Auth with PostgreSQL Row-Level Security. Your reviews are encrypted, private, and synced across all your devices.
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-icon-badge">🌓</div>
+          <h3 class="feature-box-title">Cinematic OLED Dark UI</h3>
+          <p class="feature-box-desc">
+            Tuned with deep pitch black surfaces, glassmorphic headers, and electric violet accents. Looks stunning on high-contrast OLED displays.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: How It Works (3 Steps) -->
+  <section class="landing-section" id="how-it-works">
+    <div class="landing-container">
+      <div class="section-header">
+        <span class="section-pill">Simple 3-Step Flow</span>
+        <h2 class="section-title">How KinoVibe Works</h2>
+        <p class="section-desc">
+          Building your definitive movie library takes only seconds per film.
+        </p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num-pill">01</div>
+          <h3 class="step-card-title">Search Any Movie</h3>
+          <p class="step-card-desc">
+            Enter a movie title in the TMDB search bar. With one click, artwork, cast details, runtime, and synopsis are linked to your review.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num-pill">02</div>
+          <h3 class="step-card-title">Score 4 Metrics & Add Biases</h3>
+          <p class="step-card-desc">
+            Adjust the sliders for Story, Visuals, Action, and Fun. Add your personal quirks (+1.0 Nostalgia, -0.5 Bad Dialogue) to reflect your genuine taste.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num-pill">03</div>
+          <h3 class="step-card-title">Unlock Instant Tiers & Stats</h3>
+          <p class="step-card-desc">
+            Watch your review instantly slot into its S-to-F tier row, update your Vibe Matrix scatter plot, and expand your searchable movie archive.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Conversion Section: Sign In Now -->
+  <section class="conversion-section">
+    <div class="landing-container">
+      <div class="conversion-card">
+        <h2 class="conversion-title">Ready to Upgrade Your Movie Ratings?</h2>
+        <p class="conversion-subtitle">
+          Sign in now to start logging your films, building personal tier rankings, and capturing the true nuance of cinema.
+        </p>
+
+        <div class="conversion-btn-group">
+          <a href="login.html" id="conversion-primary-cta" class="btn-hero-primary">
+            Sign In Now <span>→</span>
+          </a>
+          <a href="login.html?mode=signup" id="conversion-secondary-cta" class="btn-hero-secondary">
+            Create Free Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand-col">
+          <a href="index.html" class="nav-brand">
+            <span class="brand-kino">Kino</span><span class="brand-vibe">Vibe</span>
+          </a>
+          <p class="footer-desc">
+            Personal cinematic movie review & tier ranking platform. Designed for cinephiles who value nuanced critique over flat star ratings.
+          </p>
+        </div>
+
+        <div class="footer-links-group">
+          <div>
+            <div class="footer-col-title">App Views</div>
+            <ul class="footer-links-list">
+              <li><a href="library.html" class="footer-link">Library</a></li>
+              <li><a href="tiers.html" class="footer-link">Tier List</a></li>
+              <li><a href="matrix.html" class="footer-link">Vibe Matrix</a></li>
+              <li><a href="add.html" class="footer-link">Add Movie</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="footer-col-title">Account</div>
+            <ul class="footer-links-list">
+              <li><a href="login.html" class="footer-link">Sign In</a></li>
+              <li><a href="login.html?mode=signup" class="footer-link">Create Account</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          Film data and posters provided by <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style="color:var(--accent-light);text-decoration:underline">TMDB</a>. 
+          Cloud sync powered by Supabase.
+        </div>
+        <div>
+          © 2026 KinoVibe. Built for movie lovers.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
-  <script src="library.js"></script>
+  <script src="landing.js"></script>
 </body>
 </html>

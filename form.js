@@ -152,9 +152,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // If edit mode, load existing movie
   if (mode === 'edit') {
     const id = new URLSearchParams(window.location.search).get('id');
-    if (!id) { window.location.href = 'index.html'; return; }
+    if (!id) { window.location.href = 'library.html'; return; }
     const movie = await MovieStore.getById(id);
-    if (!movie) { window.location.href = 'index.html'; return; }
+    if (!movie) { window.location.href = 'library.html'; return; }
     
     document.getElementById('movie-id').value = movie.id;
     titleInput.value = movie.title;

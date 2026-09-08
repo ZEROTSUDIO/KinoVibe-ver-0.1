@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Auth.initNav();
 
   const id = new URLSearchParams(window.location.search).get('id');
-  if (!id) { window.location.href = 'index.html'; return; }
+  if (!id) { window.location.href = 'library.html'; return; }
   
   const movie = await MovieStore.getById(id);
-  if (!movie) { window.location.href = 'index.html'; return; }
+  if (!movie) { window.location.href = 'library.html'; return; }
 
   // Set page title
   document.title = `${movie.title} — KinoVibe`;
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     confirmBtn.textContent = 'Deleting...';
     try {
       await MovieStore.remove(movie.id);
-      window.location.href = 'index.html';
+      window.location.href = 'library.html';
     } catch (err) {
       alert('Failed to delete review: ' + (err.message || err));
       confirmBtn.disabled = false;

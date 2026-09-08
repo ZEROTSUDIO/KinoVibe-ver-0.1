@@ -1,8 +1,8 @@
-﻿document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // If user is already logged in, redirect to library
   const session = await Auth.getSession();
   if (session) {
-    window.location.href = 'index.html';
+    window.location.href = 'library.html';
     return;
   }
 
@@ -14,7 +14,9 @@
   const submitBtn = document.getElementById('auth-submit-btn');
   const alertBox = document.getElementById('auth-alert');
 
-  let mode = 'signin'; // 'signin' or 'signup'
+  // Check URL parameters for tab mode
+  const urlParams = new URLSearchParams(window.location.search);
+  let mode = urlParams.get('mode') === 'signup' ? 'signup' : 'signin';
 
   function setMode(newMode) {
     mode = newMode;
@@ -34,6 +36,9 @@
     }
   }
 
+  // Set initial mode based on URL query param
+  setMode(mode);
+
   tabSignIn.addEventListener('click', () => setMode('signin'));
   tabSignUp.addEventListener('click', () => setMode('signup'));
 
@@ -51,14 +56,14 @@
       if (mode === 'signin') {
         const { data, error } = await Auth.signIn(email, password);
         if (error) throw error;
-        window.location.href = 'index.html';
+        window.location.href = 'library.html';
       } else {
         const { data, error } = await Auth.signUp(email, password);
         if (error) throw error;
 
         // If email confirmation is enabled or auto-logged in
         if (data.session) {
-          window.location.href = 'index.html';
+          window.location.href = 'library.html';
         } else {
           alertBox.className = 'auth-alert success';
           alertBox.textContent = 'Account created! Please check your email to confirm registration or sign in.';

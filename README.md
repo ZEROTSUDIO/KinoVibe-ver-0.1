@@ -75,19 +75,24 @@
 
 ```text
 KinoVibe/
-├── index.html       # Movie library grid view with search & sorting
+├── index.html       # Landing page (hero, scoring explainer, screenshot showcase, CTAs)
+├── library.html     # Movie library grid view with search & sorting
 ├── add.html         # Add movie form with TMDB autocomplete
 ├── edit.html        # Edit movie form
 ├── view.html        # Movie details with backdrop, score breakdown, and synopsis
 ├── tiers.html       # S-to-F automated tier list
+├── matrix.html      # 2D Quality vs. Entertainment scatter plot matrix
 ├── login.html       # Authentication (Sign In & Sign Up tabs)
 ├── app.js           # Supabase client, Auth helper, and MovieStore CRUD
+├── landing.js       # Landing page controller (auth-aware CTAs, screenshot tabs)
 ├── library.js       # Library page controller (fetch, sort, render cards)
 ├── form.js          # Form handler (sliders, TMDB autocomplete, bias rows)
 ├── detail.js        # Movie detail page controller (delete modal, hero backdrop)
 ├── tiers.js         # Tier list generation and grouping
+├── matrix.js        # 2D Matrix chart plotting and interactions
 ├── tmdb.js          # TMDB API wrapper module
-├── style.css        # Core stylesheet (dark mode, layout, components, animations)
+├── screenshots/     # App screenshot gallery assets
+├── style.css        # Core stylesheet (dark mode, layout, components, landing, animations)
 ├── vercel.json      # Vercel deployment configuration
 └── README.md        # Project documentation
 ```

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allMovies = [];
   let activeTags = new Set(); // AND filter: movie must have ALL active tags
 
-  // Read URL param on load (e.g. index.html?tag=rewatchable)
+  // Read URL param on load (e.g. library.html?tag=rewatchable)
   const urlParams = new URLSearchParams(window.location.search);
   const urlTag = urlParams.get('tag');
   if (urlTag) activeTags.add(urlTag.trim().toLowerCase());

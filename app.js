@@ -48,7 +48,7 @@ const Auth = {
     } catch (e) {
       console.warn('Sign out error:', e);
     }
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   },
 
   async initNav() {
