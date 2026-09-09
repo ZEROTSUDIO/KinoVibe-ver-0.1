@@ -154,9 +154,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     confirmBtn.textContent = 'Deleting...';
     try {
       await MovieStore.remove(movie.id);
-      window.location.href = 'library.html';
+      if (window.Toast) Toast.success('Review deleted successfully.');
+      setTimeout(() => {
+        window.location.href = 'library.html';
+      }, 400);
     } catch (err) {
-      alert('Failed to delete review: ' + (err.message || err));
+      if (window.Toast) {
+        Toast.error('Failed to delete review: ' + (err.message || err));
+      } else {
+        alert('Failed to delete review: ' + (err.message || err));
+      }
       confirmBtn.disabled = false;
       confirmBtn.textContent = 'Delete permanently';
     }

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin & Moderation — KinoVibe</title>
+  <meta name="description" content="KinoVibe Platform Administration and Moderation Portal">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="library.html" class="nav-brand" title="KinoVibe Library">
+        <span class="brand-kino">Kino</span><span class="brand-vibe">Vibe</span>
+      </a>
+      <div class="nav-links">
+        <a href="library.html" class="nav-link">Library</a>
+        <a href="tiers.html" class="nav-link">Tiers</a>
+        <a href="matrix.html" class="nav-link">Matrix</a>
+        <a href="admin.html" class="nav-link active">🛡️ Admin</a>
+        <a href="add.html" class="nav-link nav-add">+ Add Movie</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-container" style="max-width:1100px">
+    <div class="page-header">
+      <div>
+        <h1>🛡️ Platform Administration</h1>
+        <div class="subtitle" id="admin-status">System health, platform metrics, and content moderation</div>
+      </div>
+      <div>
+        <button id="admin-refresh-btn" class="btn-secondary" style="font-size:13px;padding:8px 16px">↻ Refresh Data</button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-box" id="admin-loading">
+      <div class="spinner"></div>
+      <div>Loading administrative dashboard...</div>
+    </div>
+
+    <!-- Error Banner -->
+    <div class="hidden" id="admin-error" style="background:#450a0a;border:1px solid #dc2626;color:#fecaca;padding:16px 20px;border-radius:10px;margin-bottom:24px;">
+      <h4 style="margin:0 0 6px 0;font-size:16px;font-weight:700;">⚠️ Access or Query Error</h4>
+      <div id="admin-error-msg">Failed to load platform data.</div>
+    </div>
+
+    <div id="admin-content" class="hidden">
+      <!-- 1. Stats Grid -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-box p-3" style="border:1px solid var(--border-color);background:var(--card-bg);border-radius:12px;">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-num" id="stat-total-users" style="font-size:2rem;color:var(--text-primary)">—</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px">Registered accounts</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-box p-3" style="border:1px solid var(--border-color);background:var(--card-bg);border-radius:12px;">
+            <div class="stat-label">Total Reviews</div>
+            <div class="stat-num" id="stat-total-movies" style="font-size:2rem;color:var(--accent-primary)">—</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px" id="stat-public-ratio">— public / — private</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-box p-3" style="border:1px solid var(--border-color);background:var(--card-bg);border-radius:12px;">
+            <div class="stat-label">Average Score</div>
+            <div class="stat-num" id="stat-avg-score" style="font-size:2rem;color:var(--score-high)">—</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px">Across all ratings</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-box p-3" style="border:1px solid var(--border-color);background:var(--card-bg);border-radius:12px;">
+            <div class="stat-label">API Health</div>
+            <div class="stat-num" style="font-size:1.8rem;color:#22c55e">Healthy</div>
+            <div class="text-muted" style="font-size:12px;margin-top:4px">TMDB Proxy & Supabase</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Tier Distribution Bar -->
+      <div class="p-4 mb-4" style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;">
+        <h4 style="font-size:16px;font-weight:600;margin-bottom:12px">Platform Tier Distribution</h4>
+        <div id="tier-dist-bars" class="d-flex gap-2 flex-wrap" style="align-items:center">
+          <!-- Populated by admin.js -->
+        </div>
+      </div>
+
+      <!-- 3. Moderation & Users Tabs -->
+      <div class="d-flex gap-2 mb-3 border-bottom pb-2" style="border-color:var(--border-color) !important;">
+        <button id="tab-moderation-btn" class="btn-primary" style="padding:8px 18px;font-size:14px">Content Moderation</button>
+        <button id="tab-users-btn" class="btn-secondary" style="padding:8px 18px;font-size:14px">User Directory</button>
+      </div>
+
+      <!-- Section: Content Moderation Table -->
+      <div id="section-moderation">
+        <div class="table-responsive" style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;">
+          <table class="table table-dark table-hover mb-0" style="background:transparent;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border-color);color:var(--text-muted);font-size:13px">
+                <th style="padding:14px 16px;">Poster</th>
+                <th>Title / Year</th>
+                <th>Final Score</th>
+                <th>Visibility</th>
+                <th>Logged At</th>
+                <th style="text-align:right;padding-right:16px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="moderation-tbody">
+              <!-- Populated by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: User Directory Table -->
+      <div id="section-users" class="hidden">
+        <div class="table-responsive" style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;">
+          <table class="table table-dark table-hover mb-0" style="background:transparent;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border-color);color:var(--text-muted);font-size:13px">
+                <th style="padding:14px 16px;">User Email</th>
+                <th>Display Name</th>
+                <th>Role</th>
+                <th>Joined Date</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <!-- Populated by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/src/pages/admin.js"></script>
+</body>
+</html>

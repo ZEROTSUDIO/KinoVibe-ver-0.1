@@ -24,19 +24,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (urlTag) activeTags.add(urlTag.trim().toLowerCase());
 
   async function loadAndRender() {
-    // Show spinner, hide everything else
-    if (loadingState) {
-      loadingState.classList.remove('hidden');
-      loadingState.style.display = 'flex';
-    }
-    grid.classList.add('hidden');
     emptyState.classList.add('hidden');
     tagFilterBar.classList.add('hidden');
 
+    // Render animated skeleton cards
+    if (window.Skeleton) {
+      Skeleton.renderGrid(grid, 8);
+    } else if (loadingState) {
+      loadingState.classList.remove('hidden');
+      loadingState.style.display = 'flex';
+    }
+
     try {
-      allMovies = await MovieStore.getAll();
+      allMovies = await MovieStore.getAll({ sortBy: sortSelect.value });
     } catch (err) {
       console.error('Failed to load movies:', err);
+      if (window.Toast) Toast.error('Failed to load movies. ' + err.message);
       allMovies = [];
     } finally {
       if (loadingState) {
@@ -48,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTagFilterBar();
     renderList();
   }
+
 
   // ─── Tag Filter Bar ─────────────────────────────────
   function renderTagFilterBar() {

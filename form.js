@@ -424,9 +424,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const saved = await MovieStore.save(movieData);
-      window.location.href = `view.html?id=${saved.id}`;
+      if (window.Toast) Toast.success('Movie review saved successfully!');
+      setTimeout(() => {
+        window.location.href = `view.html?id=${saved.id}`;
+      }, 400);
     } catch (err) {
-      alert('Error saving review: ' + (err.message || err));
+      if (window.Toast) {
+        Toast.error('Error saving review: ' + (err.message || err));
+      } else {
+        alert('Error saving review: ' + (err.message || err));
+      }
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;
     }
