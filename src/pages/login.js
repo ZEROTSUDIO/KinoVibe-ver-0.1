@@ -1,6 +1,9 @@
+// KinoVibe Login / Registration Page Controller
+import { AuthService } from '../services/auth.service.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   // If user is already logged in, redirect to library
-  const session = await Auth.getSession();
+  const session = await AuthService.getSession();
   if (session) {
     window.location.href = 'library.html';
     return;
@@ -54,11 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       if (mode === 'signin') {
-        const { data, error } = await Auth.signIn(email, password);
+        const { data, error } = await AuthService.signIn(email, password);
         if (error) throw error;
         window.location.href = 'library.html';
       } else {
-        const { data, error } = await Auth.signUp(email, password);
+        const { data, error } = await AuthService.signUp(email, password);
         if (error) throw error;
 
         // If email confirmation is enabled or auto-logged in

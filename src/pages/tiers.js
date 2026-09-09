@@ -1,32 +1,18 @@
-const TIERS = [
-  { label: 'S', min: 9,   color: '#fbbf24' },
-  { label: 'A', min: 8,   color: '#f43f5e' },
-  { label: 'B', min: 7,   color: '#f97316' },
-  { label: 'C', min: 6,   color: '#eab308' },
-  { label: 'D', min: 5,   color: '#22c55e' },
-  { label: 'E', min: 4,   color: '#3b82f6' },
-  { label: 'F', min: -Infinity, color: '#6b7280' },
-];
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+// KinoVibe Tier List Page Controller
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { TIERS, calcScores, formatScore, getScoreLevel, getTierForScore } from '../utils/scoring.js';
+import { escapeHtml } from '../utils/ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Require login — redirect if not authenticated
-  const user = await Auth.getUser();
+  const user = await AuthService.getUser();
   if (!user) {
     window.location.href = 'login.html';
     return;
   }
 
-  await Auth.initNav();
+  await AuthService.initNav();
 
   const loadingStateEl = document.getElementById('loading-state');
   const tierCountEl = document.getElementById('tier-count');
@@ -56,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let allMovies = [];
   try {
-    allMovies = await MovieStore.getAll();
+    allMovies = await MovieService.getAll();
   } catch (err) {
     console.error('Failed to load movies for tier list:', err);
     allMovies = [];
@@ -79,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ─── Tag Filter Bar ──────────────────────────────────
   function renderTagFilterBar() {
-    const allTags = MovieStore.getAllTags(allMovies);
+    const allTags = MovieService.getAllTags(allMovies);
     if (allTags.length === 0) {
       tagFilterBar.classList.add('hidden');
       return;
@@ -123,7 +109,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (activeTags.size === 0) return allMovies;
     return allMovies.filter(m => {
       const movieTags = Array.isArray(m.tags) ? m.tags : [];
-      // OR: movie shows if it has any active tag
       for (const t of activeTags) {
         if (movieTags.includes(t)) return true;
       }
@@ -139,8 +124,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     movies.forEach(movie => {
       const scores = calcScores(movie.storyScore, movie.visualScore, movie.actionScore, movie.funScore, movie.biases || []);
       const finalScore = Number(scores.final);
-      const tier = TIERS.find(t => finalScore >= t.min);
-      if (tier) tierMap.get(tier.label).push({ ...movie, finalScore });
+      const tier = getTierForScore(finalScore);
+      if (tier && tierMap.has(tier.label)) {
+        tierMap.get(tier.label).push({ ...movie, finalScore });
+      }
     });
 
     TIERS.forEach(t => {
@@ -174,8 +161,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       let moviesHtml = '';
       tierMovies.forEach(movie => {
-        const formattedScore = typeof formatScore === 'function' ? formatScore(movie.finalScore) : movie.finalScore;
-        const level = typeof getScoreLevel === 'function' ? getScoreLevel(movie.finalScore) : '';
+        const formattedScore = formatScore(movie.finalScore);
+        const level = getScoreLevel(movie.finalScore);
         const titleYear = `${escapeHtml(movie.title)} (${escapeHtml(movie.year) || '—'})`;
         const tooltip = `${titleYear} · Score: ${formattedScore}`;
 

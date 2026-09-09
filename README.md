@@ -161,24 +161,70 @@ To access the platform administration portal (`admin.html`):
 
 ---
 
-## 📋 Release Notes — v0.2
+## 📁 Clean Codebase Organization
 
-- **Security & Secrets**:
-  - Replaced client TMDB key exposure with serverless proxy endpoints (`/api/tmdb/search`, `/api/tmdb/details`).
-  - Added HTTP edge caching headers for TMDB responses.
-- **Database & RLS**:
-  - Hardened RLS policies with `WITH CHECK` constraints and admin overrides.
-  - Added database CHECK constraints for score boundaries (0–10) and fields.
-  - Added PostgreSQL trigger for automated `base_score` and `final_score` computation.
-  - Added `profiles` table with automatic signup synchronization.
-- **User Experience**:
-  - Replaced browser alerts with non-blocking toast notifications.
-  - Added animated skeleton loaders for movie grids and detail pages.
-  - Scoped local storage caching per user to prevent multi-account data leakage.
-- **Administration**:
-  - Built `admin.html` dashboard with platform analytics, user directory, and review moderation.
-- **Architecture**:
-  - Migrated codebase to Vite with service repository layer (`MovieService`, `AuthService`, `TMDBService`, `AdminService`).
+```
+KinoVibe/
+├── index.html                  # Landing page
+├── library.html                # User movie library
+├── tiers.html                  # S-to-F auto tier list
+├── matrix.html                 # 2D Quality vs. Entertainment matrix
+├── view.html                   # Movie review detail view
+├── add.html                    # Add review form
+├── edit.html                   # Edit review form
+├── login.html                  # Authentication portal
+├── admin.html                  # Moderation & analytics dashboard
+│
+├── public/                     # Static assets served by Vite
+│   └── hero.jpeg               # Landing hero banner
+│
+├── src/
+│   ├── config.js               # Application configuration
+│   ├── app.js                  # Shared application bridge
+│   ├── styles/
+│   │   └── main.css            # Consolidated Tailwind & custom design system
+│   ├── services/               # API & data repository services
+│   │   ├── api.service.js
+│   │   ├── auth.service.js
+│   │   ├── movie.service.js
+│   │   ├── tmdb.service.js
+│   │   └── admin.service.js
+│   ├── utils/                  # Core math & UI utilities
+│   │   ├── scoring.js
+│   │   └── ui.js
+│   └── pages/                  # Page-specific controllers
+│       ├── landing.js
+│       ├── library.js
+│       ├── detail.js
+│       ├── form.js
+│       ├── tiers.js
+│       ├── matrix.js
+│       ├── login.js
+│       └── admin.js
+│
+├── api/                        # Vercel serverless functions
+│   ├── health.js
+│   └── tmdb/
+│       ├── details.js
+│       └── search.js
+│
+└── supabase/
+    └── migrations/
+        └── 001_v02_schema_and_rls.sql
+```
+
+---
+
+## 📋 Release Notes — v0.2.1 (File & Folder Organization)
+
+- **Root Directory Cleanup**:
+  - Relocated all loose page JavaScript files (`landing.js`, `library.js`, `detail.js`, `form.js`, `tiers.js`, `matrix.js`, `login.js`, `tmdb.js`) into `src/pages/`.
+  - Moved static assets (`hero.jpeg`) into the standard Vite `public/` directory.
+  - Eliminated duplicate 82KB stylesheets (`style.css` in root and `src/input.css`), consolidating everything into `src/styles/main.css`.
+- **Modular ES Imports**:
+  - Refactored all page controllers to import directly from `src/services/` and `src/utils/` without relying on `window` global variables.
+  - Deduplicated utility logic (`escapeHtml`, `TIERS`) across pages.
+  - Cleaned up multiple script tags across all 9 HTML entry points to a single module entrypoint.
 
 ---
 

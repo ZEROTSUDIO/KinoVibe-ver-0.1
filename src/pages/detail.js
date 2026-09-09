@@ -1,17 +1,23 @@
+// KinoVibe Movie Detail Page Controller
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { calcScores, getScoreLevel, formatScore } from '../utils/scoring.js';
+import { escapeHtml, Toast } from '../utils/ui.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Require login — redirect if not authenticated
-  const user = await Auth.getUser();
+  const user = await AuthService.getUser();
   if (!user) {
     window.location.href = 'login.html';
     return;
   }
 
-  await Auth.initNav();
+  await AuthService.initNav();
 
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { window.location.href = 'library.html'; return; }
   
-  const movie = await MovieStore.getById(id);
+  const movie = await MovieService.getById(id);
   if (!movie) { window.location.href = 'library.html'; return; }
 
   // Set page title
@@ -165,25 +171,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Deleting...';
     try {
-      await MovieStore.remove(movie.id);
-      if (window.Toast) Toast.success('Review deleted successfully.');
+      await MovieService.remove(movie.id);
+      Toast.success('Review deleted successfully.');
       setTimeout(() => {
         window.location.href = 'library.html';
       }, 400);
     } catch (err) {
-      if (window.Toast) {
-        Toast.error('Failed to delete review: ' + (err.message || err));
-      } else {
-        alert('Failed to delete review: ' + (err.message || err));
-      }
+      Toast.error('Failed to delete review: ' + (err.message || err));
       confirmBtn.disabled = false;
       confirmBtn.textContent = 'Delete permanently';
     }
   });
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-  }
 });

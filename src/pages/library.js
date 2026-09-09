@@ -1,12 +1,18 @@
+// KinoVibe Library Page Controller
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { calcScores, getScoreLevel, formatScore } from '../utils/scoring.js';
+import { escapeHtml, Toast } from '../utils/ui.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Require login — redirect to login page if not authenticated
-  const user = await Auth.getUser();
+  const user = await AuthService.getUser();
   if (!user) {
     window.location.href = 'login.html';
     return;
   }
 
-  await Auth.initNav();
+  await AuthService.initNav();
 
   const grid = document.getElementById('movie-grid');
   const countEl = document.getElementById('movie-count');
@@ -37,10 +43,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-      allMovies = await MovieStore.getAll({ sortBy: sortSelect.value });
+      allMovies = await MovieService.getAll({ sortBy: sortSelect.value });
     } catch (err) {
       console.error('Failed to load movies:', err);
-      if (window.Toast) Toast.error('Failed to load movies. ' + err.message);
+      Toast.error('Failed to load movies. ' + err.message);
       allMovies = [];
     } finally {
       if (loadingState) {
@@ -52,10 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderList();
   }
 
-
   // ─── Tag Filter Bar ─────────────────────────────────
   function renderTagFilterBar() {
-    const allTags = MovieStore.getAllTags(allMovies);
+    const allTags = MovieService.getAllTags(allMovies);
 
     if (allTags.length === 0) {
       tagFilterBar.classList.add('hidden');

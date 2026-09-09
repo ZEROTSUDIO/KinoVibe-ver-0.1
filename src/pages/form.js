@@ -1,12 +1,19 @@
+// KinoVibe Movie Add / Edit Form Controller
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { TMDBService } from '../services/tmdb.service.js';
+import { calcScores, getScoreLevel, formatScore } from '../utils/scoring.js';
+import { escapeHtml, Toast } from '../utils/ui.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Require login — redirect if not authenticated
-  const user = await Auth.getUser();
+  const user = await AuthService.getUser();
   if (!user) {
     window.location.href = 'login.html';
     return;
   }
 
-  await Auth.initNav();
+  await AuthService.initNav();
 
   const form = document.getElementById('movie-form');
   const mode = form.dataset.mode; // 'add' or 'edit'
@@ -53,8 +60,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load existing tags pool for autocomplete (non-blocking)
   try {
-    const allMovies = await MovieStore.getAll();
-    allExistingTags = MovieStore.getAllTags(allMovies);
+    const allMovies = await MovieService.getAll();
+    allExistingTags = MovieService.getAllTags(allMovies);
   } catch (e) {
     allExistingTags = [];
   }
@@ -153,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (mode === 'edit') {
     const id = new URLSearchParams(window.location.search).get('id');
     if (!id) { window.location.href = 'library.html'; return; }
-    const movie = await MovieStore.getById(id);
+    const movie = await MovieService.getById(id);
     if (!movie) { window.location.href = 'library.html'; return; }
     
     document.getElementById('movie-id').value = movie.id;
@@ -190,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // TMDB API Key settings button — hidden if no longer needed, kept for legacy HTML
   if (tmdbKeyBtn) {
-    tmdbKeyBtn.style.display = 'none'; // API key is hardcoded, no user config needed
+    tmdbKeyBtn.style.display = 'none';
   }
 
   // TMDB Live Search
@@ -231,9 +238,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const poster = TMDBService.getPosterUrl(movie.poster_path, 'w92') || 'https://via.placeholder.com/36x54?text=No+Poster';
       return `
         <div class="tmdb-item" data-tmdb-id="${movie.id}">
-          <img src="${poster}" alt="${movie.title}" class="tmdb-item-poster">
+          <img src="${poster}" alt="${escapeHtml(movie.title)}" class="tmdb-item-poster">
           <div class="tmdb-item-info">
-            <div class="tmdb-item-title">${movie.title}</div>
+            <div class="tmdb-item-title">${escapeHtml(movie.title)}</div>
             <div class="tmdb-item-meta">${year} ${movie.vote_average ? '· ★ ' + movie.vote_average.toFixed(1) : ''}</div>
           </div>
         </div>
@@ -474,17 +481,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitBtn.textContent = 'Saving...';
 
     try {
-      const saved = await MovieStore.save(movieData);
-      if (window.Toast) Toast.success('Movie review saved successfully!');
+      const saved = await MovieService.save(movieData);
+      Toast.success('Movie review saved successfully!');
       setTimeout(() => {
         window.location.href = `view.html?id=${saved.id}`;
       }, 400);
     } catch (err) {
-      if (window.Toast) {
-        Toast.error('Error saving review: ' + (err.message || err));
-      } else {
-        alert('Error saving review: ' + (err.message || err));
-      }
+      Toast.error('Error saving review: ' + (err.message || err));
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;
     }

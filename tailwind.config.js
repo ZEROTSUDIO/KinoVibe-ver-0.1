@@ -2,8 +2,7 @@
 export default {
   content: [
     "./*.html",
-    "./*.js",
-    "./src/**/*.js",
+    "./src/**/*.{js,html}",
     "./api/**/*.js"
   ],
   theme: {

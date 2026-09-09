@@ -1,22 +1,18 @@
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+// KinoVibe 2D Vibe Matrix Page Controller
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { calcScores, formatScore, getScoreLevel } from '../utils/scoring.js';
+import { escapeHtml } from '../utils/ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Require login — redirect if not authenticated
-  const user = await Auth.getUser();
+  const user = await AuthService.getUser();
   if (!user) {
     window.location.href = 'login.html';
     return;
   }
 
-  await Auth.initNav();
+  await AuthService.initNav();
 
   const loadingStateEl = document.getElementById('loading-state');
   const matrixWrapperEl = document.getElementById('matrix-wrapper');
@@ -51,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let rawMovies = [];
   try {
-    rawMovies = await MovieStore.getAll();
+    rawMovies = await MovieService.getAll();
   } catch (err) {
     console.error('Failed to load movies for matrix:', err);
     rawMovies = [];
@@ -74,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ─── Tag Filter Bar ──────────────────────────────────
   function renderTagFilterBar() {
-    const allTags = MovieStore.getAllTags(rawMovies);
+    const allTags = MovieService.getAllTags(rawMovies);
     if (allTags.length === 0) {
       tagFilterBar.classList.add('hidden');
       return;
@@ -118,7 +114,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (activeTags.size === 0) return rawMovies;
     return rawMovies.filter(m => {
       const movieTags = Array.isArray(m.tags) ? m.tags : [];
-      // OR: movie shows if it has any active tag
       for (const t of activeTags) {
         if (movieTags.includes(t)) return true;
       }
@@ -218,8 +213,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       pin.style.left = `${posX.toFixed(2)}%`;
       pin.style.bottom = `${posY.toFixed(2)}%`;
 
-      const level = typeof getScoreLevel === 'function' ? getScoreLevel(movie.finalScore) : '';
-      const formattedScore = typeof formatScore === 'function' ? formatScore(movie.finalScore) : movie.finalScore;
+      const level = getScoreLevel(movie.finalScore);
+      const formattedScore = formatScore(movie.finalScore);
 
       if (currentView === 'posters') {
         const posterContent = movie.posterUrl
@@ -257,8 +252,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function showTooltip(movie, pinEl) {
     if (!tooltipEl || !matrixBoardEl) return;
 
-    const formattedScore = typeof formatScore === 'function' ? formatScore(movie.finalScore) : movie.finalScore;
-    const level = typeof getScoreLevel === 'function' ? getScoreLevel(movie.finalScore) : '';
+    const formattedScore = formatScore(movie.finalScore);
+    const level = getScoreLevel(movie.finalScore);
 
     const posterThumb = movie.posterUrl
       ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="tooltip-poster" onerror="this.style.display='none'">`

@@ -1,9 +1,11 @@
-// KinoVibe v0.2 — Landing Page Controller
+// KinoVibe Landing Page Controller
+import { AuthService } from '../services/auth.service.js';
+import { escapeHtml } from '../utils/ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // ─── 1. Auth Status & Dynamic CTAs ──────────────────
   try {
-    const user = await Auth.getUser();
+    const user = await AuthService.getUser();
     if (user) {
       updateUIForAuthenticatedUser(user);
     }
@@ -24,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
 
       document.getElementById('landing-signout-btn')?.addEventListener('click', async () => {
-        await Auth.signOut();
+        await AuthService.signOut();
         window.location.reload();
       });
     }
