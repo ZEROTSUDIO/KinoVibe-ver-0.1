@@ -14,9 +14,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loadingState = document.getElementById('loading-state');
   const sortSelect = document.getElementById('sort-select');
   const tagFilterBar = document.getElementById('tag-filter-bar');
+  const searchInput = document.getElementById('library-search');
+  const searchClear = document.getElementById('library-search-clear');
 
   let allMovies = [];
   let activeTags = new Set(); // AND filter: movie must have ALL active tags
+  let searchQuery = '';
 
   // Read URL param on load (e.g. library.html?tag=rewatchable)
   const urlParams = new URLSearchParams(window.location.search);
@@ -26,13 +29,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadAndRender() {
     emptyState.classList.add('hidden');
     tagFilterBar.classList.add('hidden');
+    grid.classList.add('hidden');
 
-    // Render animated skeleton cards
-    if (window.Skeleton) {
-      Skeleton.renderGrid(grid, 8);
-    } else if (loadingState) {
+    // Show skeleton loading state
+    if (loadingState) {
       loadingState.classList.remove('hidden');
-      loadingState.style.display = 'flex';
     }
 
     try {
@@ -44,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } finally {
       if (loadingState) {
         loadingState.classList.add('hidden');
-        loadingState.style.display = 'none';
       }
     }
 
@@ -108,15 +108,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function getFilteredMovies() {
-    if (activeTags.size === 0) return allMovies;
-    return allMovies.filter(m => {
-      const movieTags = Array.isArray(m.tags) ? m.tags : [];
-      // OR: movie shows if it has any active tag
-      for (const t of activeTags) {
-        if (movieTags.includes(t)) return true;
-      }
-      return false;
-    });
+    let result = allMovies;
+
+    // Filter by active tags (movie must have at least one of the active tags)
+    if (activeTags.size > 0) {
+      result = result.filter(m => {
+        const movieTags = Array.isArray(m.tags) ? m.tags : [];
+        for (const t of activeTags) {
+          if (movieTags.includes(t)) return true;
+        }
+        return false;
+      });
+    }
+
+    // Filter by search query (title or year)
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(m => {
+        const title = (m.title || '').toLowerCase();
+        const year = String(m.year || '');
+        return title.includes(q) || year.includes(q);
+      });
+    }
+
+    return result;
   }
   // ────────────────────────────────────────────────────
 
@@ -126,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const movies = sortMovies(filtered, sort);
 
     // Update count
-    if (activeTags.size > 0) {
+    if (activeTags.size > 0 || searchQuery.trim()) {
       countEl.textContent = `${movies.length} of ${allMovies.length} movie${allMovies.length !== 1 ? 's' : ''} matched`;
     } else {
       countEl.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} logged`;
@@ -139,9 +154,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Customize empty state if filtering
       const emptyTitle = emptyState.querySelector('.empty-title');
       const emptySubtitle = emptyState.querySelector('.empty-subtitle');
-      if (activeTags.size > 0 && emptyTitle) {
+      if (searchQuery.trim() && emptyTitle) {
+        emptyTitle.textContent = `No movies found for "${searchQuery}"`;
+        if (emptySubtitle) emptySubtitle.textContent = 'Check your search query or try removing tag filters';
+      } else if (activeTags.size > 0 && emptyTitle) {
         emptyTitle.textContent = 'No movies with these tags';
-        if (emptySubtitle) emptySubtitle.textContent = `Try removing a tag filter or add tags to your movies`;
+        if (emptySubtitle) emptySubtitle.textContent = 'Try removing a tag filter or add tags to your movies';
+      } else if (emptyTitle) {
+        emptyTitle.textContent = 'No movies yet';
+        if (emptySubtitle) emptySubtitle.textContent = 'Start building your personal review library';
       }
       return;
     }
@@ -153,10 +174,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     movies.forEach((movie, i) => {
       const scores = calcScores(movie.storyScore, movie.visualScore, movie.actionScore, movie.funScore, movie.biases || []);
       const level = getScoreLevel(scores.final);
+      const glowRing = level === 'high' 
+        ? 'shadow-glow-high ring-1 ring-emerald-500/40' 
+        : (level === 'mid' ? 'shadow-glow-mid ring-1 ring-amber-500/40' : 'shadow-glow-low ring-1 ring-rose-500/40');
       
       // Poster content: image or fallback letter
       const posterContent = movie.posterUrl
-        ? `<img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        ? `<img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
            <div class="poster-fallback" style="display:none">${escapeHtml((movie.title || '?')[0])}</div>`
         : `<div class="poster-fallback">${escapeHtml((movie.title || '?')[0])}</div>`;
 
@@ -167,17 +191,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         : '';
 
       const card = document.createElement('div');
-      card.className = 'col-6 col-md-4 col-lg-3';
+      card.className = 'w-full flex flex-col group';
       card.innerHTML = `
-        <a href="view.html?id=${movie.id}" class="movie-card fade-in" style="--delay:${i * 0.05}s">
-          <div class="movie-poster">${posterContent}</div>
+        <a href="view.html?id=${movie.id}" class="movie-card fade-in block h-full transition duration-300 hover:-translate-y-1.5 hover:shadow-glow-accent hover:border-kino-border-accent" style="--delay:${i * 0.04}s">
+          <div class="movie-poster relative overflow-hidden">${posterContent}</div>
           <div class="ticket-cut movie-info">
-            <div>
-              <div class="movie-title">${escapeHtml(movie.title)}</div>
+            <div class="min-w-0 pr-1">
+              <div class="movie-title truncate" title="${escapeHtml(movie.title)}">${escapeHtml(movie.title)}</div>
               <div class="movie-year">${escapeHtml(movie.year) || '—'}</div>
               ${tagsHtml}
             </div>
-            <div class="score-badge ${level}">${formatScore(scores.final)}</div>
+            <div class="score-badge ${level} ${glowRing} flex-shrink-0">${formatScore(scores.final)}</div>
           </div>
         </a>
       `;
@@ -206,6 +230,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       default:
         return movies;
     }
+  }
+
+  // Real-time search input listener
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      if (searchClear) {
+        searchClear.classList.toggle('hidden', !searchQuery);
+      }
+      renderList();
+    });
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      searchClear.classList.add('hidden');
+      searchInput.focus();
+      renderList();
+    });
   }
 
   sortSelect.addEventListener('change', renderList);

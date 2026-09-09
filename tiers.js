@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       tierRow.className = `tier-row ${isEmpty ? 'tier-empty' : ''}`;
       
       tierRow.innerHTML = `
-        <div class="tier-label" style="background: ${t.color}">${t.label}</div>
+        <div class="tier-label tier-${t.label.toLowerCase()}">${t.label}</div>
         <div class="tier-movies">
           ${moviesHtml}
         </div>

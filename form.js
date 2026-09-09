@@ -271,7 +271,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (runtimeInput) runtimeInput.value = movie.runtime || '';
 
     if (tmdbSearchInput) tmdbSearchInput.value = `${movie.title} (${movie.release_date ? movie.release_date.substring(0,4) : ''})`;
+
+    // Populate preview card
+    const previewEl = document.getElementById('selected-movie-preview');
+    const previewPoster = document.getElementById('preview-poster');
+    const previewTitle = document.getElementById('preview-title');
+    const previewYear = document.getElementById('preview-year');
+    const previewGenres = document.getElementById('preview-genres');
+    if (previewEl && previewTitle) {
+      previewTitle.textContent = movie.title || '';
+      if (previewYear) previewYear.textContent = movie.release_date ? movie.release_date.substring(0, 4) : '';
+      if (previewGenres) previewGenres.textContent = (movie.genres || []).map(g => g.name || g).join(' · ');
+      if (previewPoster) {
+        const pUrl = movie.poster_path ? TMDBService.getPosterUrl(movie.poster_path, 'w92') : (movie.posterUrl || '');
+        if (pUrl) {
+          previewPoster.src = pUrl;
+          previewPoster.style.display = 'block';
+        } else {
+          previewPoster.style.display = 'none';
+        }
+      }
+      previewEl.classList.remove('hidden');
+    }
+
     updateScore();
+  }
+
+  // Clear preview listener
+  const clearPreviewBtn = document.getElementById('clear-movie-preview');
+  if (clearPreviewBtn) {
+    clearPreviewBtn.addEventListener('click', () => {
+      const previewEl = document.getElementById('selected-movie-preview');
+      if (previewEl) previewEl.classList.add('hidden');
+      if (tmdbIdInput) tmdbIdInput.value = '';
+      if (backdropUrlInput) backdropUrlInput.value = '';
+      if (overviewInput) overviewInput.value = '';
+      if (genresInput) genresInput.value = '';
+      if (runtimeInput) runtimeInput.value = '';
+      if (tmdbSearchInput) tmdbSearchInput.value = '';
+    });
   }
 
   // Initialize sliders
@@ -344,6 +382,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateScore();
   }
 
+  // Quick bias presets click handler
+  const biasPresets = document.getElementById('bias-presets');
+  if (biasPresets) {
+    biasPresets.addEventListener('click', (e) => {
+      const btn = e.target.closest('.preset-chip');
+      if (!btn) return;
+      const amount = parseFloat(btn.dataset.amount) || 0;
+      const reason = btn.dataset.reason || '';
+      addBiasRow(amount, reason);
+    });
+  }
+
   // Gather biases from DOM
   function getBiases() {
     const rows = biasContainer.querySelectorAll('.bias-row');
@@ -373,9 +423,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     scoreBreakdownEl.innerHTML = `Base ${formatScore(scores.base)} &nbsp;·&nbsp; Bias ${biasPrefix}${scores.totalBias} &nbsp;=&nbsp; Final`;
     scoreFinalEl.textContent = formatScore(scores.final);
     
-    // Update score color
+    // Update score color with glow
     const level = getScoreLevel(scores.final);
-    scoreFinalEl.className = 'score-big score-' + level;
+    const scoreGlow = level === 'high' ? 'text-score-high drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]' : (level === 'mid' ? 'text-score-mid drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'text-score-low drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]');
+    scoreFinalEl.className = `score-big score-${level} ${scoreGlow}`;
   }
 
   // Form submit
