@@ -1,4 +1,4 @@
-// KinoVibe Library Page Controller
+// KinoVibe Library Page Controller — Suggestion A (Cinephile Showcase & 6-Col Grid)
 import { AuthService } from '../services/auth.service.js';
 import { MovieService } from '../services/movie.service.js';
 import { calcScores, getScoreLevel, formatScore } from '../utils/scoring.js';
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await AuthService.initNav();
 
+  // Elements
   const grid = document.getElementById('movie-grid');
   const countEl = document.getElementById('movie-count');
   const emptyState = document.getElementById('empty-state');
@@ -23,8 +24,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const searchInput = document.getElementById('library-search');
   const searchClear = document.getElementById('library-search-clear');
 
+  // Suggestion A Elements
+  const statsBar = document.getElementById('library-stats-bar');
+  const statTotal = document.getElementById('stat-total-logged');
+  const statAvg = document.getElementById('stat-avg-rating');
+  const statSTier = document.getElementById('stat-s-tier-count');
+  const statTopCraft = document.getElementById('stat-top-craft');
+
+  const showcaseContainer = document.getElementById('showcase-container');
+  const shelfHof = document.getElementById('shelf-hall-of-fame');
+  const hofGrid = document.getElementById('hof-grid');
+  const hofCount = document.getElementById('hof-count');
+  const shelfBias = document.getElementById('shelf-bias-outliers');
+  const biasGrid = document.getElementById('bias-grid');
+
+  const collectionHeading = document.getElementById('collection-heading');
+  const collectionSubtitle = document.getElementById('collection-subtitle');
+
   let allMovies = [];
-  let activeTags = new Set(); // AND filter: movie must have ALL active tags
+  let activeTags = new Set();
   let searchQuery = '';
 
   // Read URL param on load (e.g. library.html?tag=rewatchable)
@@ -36,8 +54,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     emptyState.classList.add('hidden');
     tagFilterBar.classList.add('hidden');
     grid.classList.add('hidden');
+    if (showcaseContainer) showcaseContainer.classList.add('hidden');
+    if (statsBar) statsBar.classList.add('hidden');
 
-    // Show skeleton loading state
     if (loadingState) {
       loadingState.classList.remove('hidden');
     }
@@ -55,10 +74,143 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     renderTagFilterBar();
+    renderStatsAndShowcase();
     renderList();
   }
 
-  // ─── Tag Filter Bar ─────────────────────────────────
+  // ─── 1. Stats & Showcase Shelves (Suggestion A) ───────
+  function renderStatsAndShowcase() {
+    if (allMovies.length === 0) {
+      if (statsBar) statsBar.classList.add('hidden');
+      if (showcaseContainer) showcaseContainer.classList.add('hidden');
+      return;
+    }
+
+    // Calculate aggregated statistics
+    let totalScoreSum = 0;
+    let sTierCount = 0;
+    let storySum = 0, visualsSum = 0, actionSum = 0, funSum = 0;
+
+    const enriched = allMovies.map(m => {
+      const scores = calcScores(m.storyScore, m.visualScore, m.actionScore, m.funScore, m.biases || []);
+      totalScoreSum += scores.final;
+      if (scores.final >= 9.0) sTierCount++;
+
+      storySum += Number(m.storyScore) || 0;
+      visualsSum += Number(m.visualScore) || 0;
+      actionSum += Number(m.actionScore) || 0;
+      funSum += Number(m.funScore) || 0;
+
+      return { ...m, computedScores: scores };
+    });
+
+    const avgFinal = (totalScoreSum / allMovies.length).toFixed(1);
+
+    // Determine highest rated criterion
+    const criteriaAvgs = [
+      { label: 'Story', val: storySum / allMovies.length },
+      { label: 'Visuals', val: visualsSum / allMovies.length },
+      { label: 'Action', val: actionSum / allMovies.length },
+      { label: 'Fun', val: funSum / allMovies.length },
+    ].sort((a, b) => b.val - a.val);
+
+    const topCriterion = criteriaAvgs[0];
+
+    // Populate Top Stats Strip
+    if (statsBar) {
+      statsBar.classList.remove('hidden');
+      if (statTotal) statTotal.textContent = allMovies.length;
+      if (statAvg) statAvg.textContent = `★ ${avgFinal}`;
+      if (statSTier) statSTier.textContent = sTierCount;
+      if (statTopCraft) statTopCraft.textContent = `${topCriterion.label} (${topCriterion.val.toFixed(1)})`;
+    }
+
+    // Populate Showcase Shelf 1: Hall of Fame (S Tier / 9.0+)
+    const hofMovies = enriched.filter(m => m.computedScores.final >= 9.0);
+    if (shelfHof && hofGrid) {
+      if (hofMovies.length > 0) {
+        shelfHof.classList.remove('hidden');
+        if (hofCount) hofCount.textContent = hofMovies.length;
+        hofGrid.innerHTML = hofMovies.slice(0, 6).map((m, i) => createCardHtml(m, m.computedScores, i, 'hof')).join('');
+      } else {
+        shelfHof.classList.add('hidden');
+      }
+    }
+
+    // Populate Showcase Shelf 2: Bias Outliers (Largest absolute bias)
+    const biasMovies = enriched
+      .filter(m => Math.abs(m.computedScores.totalBias) >= 0.5)
+      .sort((a, b) => Math.abs(b.computedScores.totalBias) - Math.abs(a.computedScores.totalBias));
+
+    if (shelfBias && biasGrid) {
+      if (biasMovies.length > 0) {
+        shelfBias.classList.remove('hidden');
+        biasGrid.innerHTML = biasMovies.slice(0, 6).map((m, i) => createCardHtml(m, m.computedScores, i, 'bias')).join('');
+      } else {
+        shelfBias.classList.add('hidden');
+      }
+    }
+
+    // Show showcase container only if at least one shelf is visible
+    const hasShowcase = (hofMovies.length > 0) || (biasMovies.length > 0);
+    if (showcaseContainer) {
+      if (hasShowcase && !searchQuery.trim() && activeTags.size === 0) {
+        showcaseContainer.classList.remove('hidden');
+      } else {
+        showcaseContainer.classList.add('hidden');
+      }
+    }
+  }
+
+  // ─── 2. Compact Movie Card Template (6-Col Friendly) ──
+  function createCardHtml(movie, scores, index, variant = 'default') {
+    const level = getScoreLevel(scores.final);
+    const glowRing = level === 'high' 
+      ? 'shadow-glow-high ring-1 ring-emerald-500/40' 
+      : (level === 'mid' ? 'shadow-glow-mid ring-1 ring-amber-500/40' : 'shadow-glow-low ring-1 ring-rose-500/40');
+
+    let extraCardClass = '';
+    if (variant === 'hof') extraCardClass = 'hof-card';
+    if (variant === 'bias') extraCardClass = 'bias-card';
+
+    // Poster content: image or fallback letter
+    const posterContent = movie.posterUrl
+      ? `<img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="poster-fallback" style="display:none">${escapeHtml((movie.title || '?')[0])}</div>`
+      : `<div class="poster-fallback">${escapeHtml((movie.title || '?')[0])}</div>`;
+
+    // Tags row (only show 1-2 tags to keep card compact)
+    const movieTags = Array.isArray(movie.tags) ? movie.tags : [];
+    let badgeHtml = '';
+
+    if (variant === 'bias') {
+      const topBias = (Array.isArray(movie.biases) && movie.biases.length > 0) ? movie.biases[0] : null;
+      const isPos = scores.totalBias > 0;
+      const biasLabel = topBias ? escapeHtml(topBias.reason || '') : (isPos ? 'Positive bias' : 'Negative bias');
+      const sign = isPos ? '+' : '';
+      badgeHtml = `<div class="bias-tag-pill ${isPos ? 'positive' : 'negative'}" title="${sign}${scores.totalBias} ${biasLabel}">${sign}${scores.totalBias} ${biasLabel.slice(0, 12)}</div>`;
+    } else if (movieTags.length > 0) {
+      badgeHtml = `<div class="movie-card-tags" style="margin-top:2px">${movieTags.slice(0, 1).map(t => `<span class="tag-link" style="pointer-events:none;font-size:9px;padding:1px 5px">${escapeHtml(t)}</span>`).join('')}${movieTags.length > 1 ? `<span style="font-size:9px;color:var(--text-muted)">+${movieTags.length - 1}</span>` : ''}</div>`;
+    }
+
+    return `
+      <div class="w-full flex flex-col group">
+        <a href="view.html?id=${movie.id}" class="movie-card ${extraCardClass} fade-in block h-full transition duration-300 hover:-translate-y-1.5" style="--delay:${index * 0.03}s">
+          <div class="movie-poster relative overflow-hidden">${posterContent}</div>
+          <div class="ticket-cut movie-info">
+            <div class="min-w-0 pr-1 flex-1">
+              <div class="movie-title truncate" title="${escapeHtml(movie.title)}">${escapeHtml(movie.title)}</div>
+              <div class="movie-year">${escapeHtml(movie.year) || '—'}</div>
+              ${badgeHtml}
+            </div>
+            <div class="score-badge ${level} ${glowRing} flex-shrink-0">${formatScore(scores.final)}</div>
+          </div>
+        </a>
+      </div>
+    `;
+  }
+
+  // ─── 3. Tag Filter Bar ────────────────────────────────
   function renderTagFilterBar() {
     const allTags = MovieService.getAllTags(allMovies);
 
@@ -99,7 +251,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             activeTags.add(tag);
           }
         }
-        // Update URL param (single tag for deep-linking; multi-tag keeps last)
         if (activeTags.size === 1) {
           const [t] = activeTags;
           history.replaceState(null, '', `?tag=${encodeURIComponent(t)}`);
@@ -115,7 +266,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   function getFilteredMovies() {
     let result = allMovies;
 
-    // Filter by active tags (movie must have at least one of the active tags)
     if (activeTags.size > 0) {
       result = result.filter(m => {
         const movieTags = Array.isArray(m.tags) ? m.tags : [];
@@ -126,7 +276,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Filter by search query (title or year)
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(m => {
@@ -138,80 +287,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return result;
   }
-  // ────────────────────────────────────────────────────
 
+  // ─── 4. Main Collection List ──────────────────────────
   function renderList() {
     const sort = sortSelect.value;
     const filtered = getFilteredMovies();
     const movies = sortMovies(filtered, sort);
 
-    // Update count
-    if (activeTags.size > 0 || searchQuery.trim()) {
+    const isFiltered = activeTags.size > 0 || Boolean(searchQuery.trim());
+
+    // Toggle showcase visibility based on filter state
+    if (showcaseContainer) {
+      const hasShowcaseItems = (shelfHof && !shelfHof.classList.contains('hidden')) || (shelfBias && !shelfBias.classList.contains('hidden'));
+      if (isFiltered || !hasShowcaseItems || allMovies.length === 0) {
+        showcaseContainer.classList.add('hidden');
+      } else {
+        showcaseContainer.classList.remove('hidden');
+      }
+    }
+
+    // Update section headers
+    if (isFiltered) {
+      if (collectionHeading) collectionHeading.textContent = 'Filtered Results';
+      if (collectionSubtitle) collectionSubtitle.textContent = `Showing ${movies.length} of ${allMovies.length} movies`;
       countEl.textContent = `${movies.length} of ${allMovies.length} movie${allMovies.length !== 1 ? 's' : ''} matched`;
     } else {
+      if (collectionHeading) collectionHeading.textContent = 'All Reviews';
+      if (collectionSubtitle) collectionSubtitle.textContent = 'Search, filter, and sort your entire catalog';
       countEl.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} logged`;
     }
 
-    // Show/hide empty state
+    // Empty state
     if (movies.length === 0) {
       grid.classList.add('hidden');
       emptyState.classList.remove('hidden');
-      // Customize empty state if filtering
       const emptyTitle = emptyState.querySelector('.empty-title');
       const emptySubtitle = emptyState.querySelector('.empty-subtitle');
       if (searchQuery.trim() && emptyTitle) {
         emptyTitle.textContent = `No movies found for "${searchQuery}"`;
-        if (emptySubtitle) emptySubtitle.textContent = 'Check your search query or try removing tag filters';
+        if (emptySubtitle) emptySubtitle.textContent = 'Try adjusting your search query or clear tag filters';
       } else if (activeTags.size > 0 && emptyTitle) {
-        emptyTitle.textContent = 'No movies with these tags';
-        if (emptySubtitle) emptySubtitle.textContent = 'Try removing a tag filter or add tags to your movies';
+        emptyTitle.textContent = 'No movies matching these tags';
+        if (emptySubtitle) emptySubtitle.textContent = 'Try removing tags or tagging more movies';
       } else if (emptyTitle) {
         emptyTitle.textContent = 'No movies yet';
         if (emptySubtitle) emptySubtitle.textContent = 'Start building your personal review library';
       }
       return;
     }
+
     grid.classList.remove('hidden');
     emptyState.classList.add('hidden');
 
-    // Render cards
-    grid.innerHTML = '';
-    movies.forEach((movie, i) => {
+    // Render cards into compact 6-column grid
+    grid.innerHTML = movies.map((movie, i) => {
       const scores = calcScores(movie.storyScore, movie.visualScore, movie.actionScore, movie.funScore, movie.biases || []);
-      const level = getScoreLevel(scores.final);
-      const glowRing = level === 'high' 
-        ? 'shadow-glow-high ring-1 ring-emerald-500/40' 
-        : (level === 'mid' ? 'shadow-glow-mid ring-1 ring-amber-500/40' : 'shadow-glow-low ring-1 ring-rose-500/40');
-      
-      // Poster content: image or fallback letter
-      const posterContent = movie.posterUrl
-        ? `<img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-           <div class="poster-fallback" style="display:none">${escapeHtml((movie.title || '?')[0])}</div>`
-        : `<div class="poster-fallback">${escapeHtml((movie.title || '?')[0])}</div>`;
-
-      // Tags row (only show if movie has tags)
-      const movieTags = Array.isArray(movie.tags) ? movie.tags : [];
-      const tagsHtml = movieTags.length > 0
-        ? `<div class="movie-card-tags">${movieTags.slice(0, 3).map(t => `<span class="tag-link" style="pointer-events:none;font-size:10px;padding:1px 7px">${escapeHtml(t)}</span>`).join('')}${movieTags.length > 3 ? `<span style="font-size:10px;color:var(--text-muted)">+${movieTags.length - 3}</span>` : ''}</div>`
-        : '';
-
-      const card = document.createElement('div');
-      card.className = 'w-full flex flex-col group';
-      card.innerHTML = `
-        <a href="view.html?id=${movie.id}" class="movie-card fade-in block h-full transition duration-300 hover:-translate-y-1.5 hover:shadow-glow-accent hover:border-kino-border-accent" style="--delay:${i * 0.04}s">
-          <div class="movie-poster relative overflow-hidden">${posterContent}</div>
-          <div class="ticket-cut movie-info">
-            <div class="min-w-0 pr-1">
-              <div class="movie-title truncate" title="${escapeHtml(movie.title)}">${escapeHtml(movie.title)}</div>
-              <div class="movie-year">${escapeHtml(movie.year) || '—'}</div>
-              ${tagsHtml}
-            </div>
-            <div class="score-badge ${level} ${glowRing} flex-shrink-0">${formatScore(scores.final)}</div>
-          </div>
-        </a>
-      `;
-      grid.appendChild(card);
-    });
+      return createCardHtml(movie, scores, i, 'default');
+    }).join('');
   }
 
   function sortMovies(movies, sort) {

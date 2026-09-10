@@ -23,33 +23,101 @@
     </div>
   </nav>
 
-  <main class="page-container" style="max-width:1100px">
-    <div class="page-header">
+  <main class="page-container" style="max-width:1380px">
+    <!-- Page Header & Actions -->
+    <div class="page-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
-        <h1>Your Library</h1>
-        <div class="subtitle" id="movie-count">0 movies logged</div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Your Library</h1>
+        <div class="subtitle text-sm text-kino-muted" id="movie-count">Loading your collection...</div>
       </div>
+      <div class="flex items-center gap-2.5">
+        <a href="tiers.html" class="btn-secondary text-xs sm:text-sm py-2 px-3.5 inline-flex items-center gap-1.5" style="text-decoration:none">🏆 Tier List</a>
+        <a href="matrix.html" class="btn-secondary text-xs sm:text-sm py-2 px-3.5 inline-flex items-center gap-1.5" style="text-decoration:none">🧭 Matrix</a>
+        <a href="add.html" class="btn-primary inline-flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm py-2 px-4" style="text-decoration:none"><span>+</span> Add Movie</a>
+      </div>
+    </div>
+
+    <!-- 1. Stats Overview Bar (Suggestion A) -->
+    <div id="library-stats-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-6 hidden">
+      <div class="library-stat-card">
+        <div class="library-stat-val" id="stat-total-logged">0</div>
+        <div class="library-stat-label">Movies Logged</div>
+      </div>
+      <div class="library-stat-card">
+        <div class="library-stat-val" id="stat-avg-rating" style="color:var(--score-high)">—</div>
+        <div class="library-stat-label">Average Rating</div>
+      </div>
+      <div class="library-stat-card">
+        <div class="library-stat-val" id="stat-s-tier-count" style="color:#fbbf24">0</div>
+        <div class="library-stat-label">Masterpieces (S Tier)</div>
+      </div>
+      <div class="library-stat-card">
+        <div class="library-stat-val" id="stat-top-craft" style="color:var(--accent-light)">—</div>
+        <div class="library-stat-label">Highest Criterion</div>
+      </div>
+    </div>
+
+    <!-- 2. Showcase Shelves (Hidden when actively searching/tag filtering) -->
+    <div id="showcase-container" class="space-y-8 my-8 hidden">
+      <!-- Shelf: Hall of Fame (S Tier / 9.0+) -->
+      <section id="shelf-hall-of-fame" class="showcase-shelf hidden">
+        <div class="shelf-header flex items-center justify-between mb-3.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🏆</span>
+            <h2 class="text-lg font-bold tracking-tight text-white m-0">Hall of Fame</h2>
+            <span class="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs px-2 py-0.5 rounded-full font-semibold" id="hof-count">0</span>
+          </div>
+          <span class="text-xs text-kino-muted hidden sm:inline">Score ≥ 9.0 (Masterpieces)</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5" id="hof-grid"></div>
+      </section>
+
+      <!-- Shelf: Bias Outliers -->
+      <section id="shelf-bias-outliers" class="showcase-shelf hidden">
+        <div class="shelf-header flex items-center justify-between mb-3.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🎯</span>
+            <h2 class="text-lg font-bold tracking-tight text-white m-0">Bias Outliers</h2>
+            <span class="badge bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs px-2 py-0.5 rounded-full font-semibold">Wildcards</span>
+          </div>
+          <span class="text-xs text-kino-muted hidden sm:inline">Where your personal biases shifted the score most</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5" id="bias-grid"></div>
+      </section>
+    </div>
+
+    <!-- 3. All Reviews Section Header & Toolbar -->
+    <div class="all-reviews-header flex flex-col md:flex-row md:items-center justify-between gap-3 pt-4 border-t border-white/[0.08] mb-4">
+      <div>
+        <h2 class="text-lg font-bold tracking-tight text-white m-0" id="collection-heading">All Reviews</h2>
+        <div class="text-xs text-kino-muted" id="collection-subtitle">Search, filter, and sort your entire catalog</div>
+      </div>
+
+      <!-- Search & Sort Controls -->
       <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-        <div class="relative w-full sm:w-56">
+        <div class="relative w-full sm:w-60">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-kino-muted text-sm">🔍</span>
-          <input type="text" id="library-search" placeholder="Search title or year..." class="w-full bg-white/[0.04] border border-white/[0.08] focus:border-kino-accent focus:ring-1 focus:ring-kino-accent rounded-full pl-9 pr-8 py-2 text-sm text-kino-text placeholder-kino-muted outline-none transition">
+          <input type="text" id="library-search" placeholder="Search title or year..." class="w-full bg-white/[0.04] border border-white/[0.08] focus:border-kino-accent focus:ring-1 focus:ring-kino-accent rounded-full pl-9 pr-8 py-1.5 text-xs sm:text-sm text-kino-text placeholder-kino-muted outline-none transition">
           <button type="button" id="library-search-clear" class="hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-kino-muted hover:text-white text-xs cursor-pointer">✕</button>
         </div>
-        <select class="form-select" id="sort-select" style="width:auto">
+        <select class="form-select text-xs sm:text-sm py-1.5" id="sort-select" style="width:auto">
           <option value="newest">Newest first</option>
           <option value="highest">Highest score</option>
           <option value="lowest">Lowest score</option>
           <option value="title">Title A–Z</option>
         </select>
-        <a href="add.html" class="btn-primary inline-flex items-center gap-1.5 whitespace-nowrap" style="text-decoration:none"><span>+</span> Add Movie</a>
       </div>
     </div>
 
     <!-- Tag Filter Bar — populated by library.js -->
-    <div class="tag-filter-bar hidden" id="tag-filter-bar"></div>
+    <div class="tag-filter-bar hidden mb-4" id="tag-filter-bar"></div>
 
-    <!-- Skeleton Shimmer Loading Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12 hidden" id="loading-state">
+    <!-- Skeleton Shimmer Loading Grid (6 Columns) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5 mb-12 hidden" id="loading-state">
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
+      <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
       <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
       <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
       <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
@@ -60,7 +128,8 @@
       <div class="skeleton-card"><div class="skeleton-shimmer"></div></div>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12 hidden" id="movie-grid"></div>
+    <!-- Main Movie Grid (6 Columns) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3.5 mb-12 hidden" id="movie-grid"></div>
 
     <div class="empty-state hidden" id="empty-state">
       <div class="empty-icon">🎬</div>
