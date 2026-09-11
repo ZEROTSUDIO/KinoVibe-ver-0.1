@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Movie Detail — KinoVibe</title>
-  <meta name="description" content="View your detailed movie review with scores and bias breakdown.">
+  <title>Movie Review — KinoVibe</title>
+  <meta name="description" content="View personal movie critique with the 4-metric system, personal bias equation, and vibe matrix.">
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body>
@@ -23,81 +23,206 @@
     </div>
   </nav>
 
-  <main class="page-container" style="max-width:760px">
-    <a href="library.html" class="back-link">← Back to Library</a>
+  <main class="page-container" style="max-width: 1200px">
+    <a href="library.html" class="back-link mb-4 inline-block">← Back to Library</a>
 
     <!-- TMDB Backdrop Hero -->
     <div id="backdrop-container"></div>
 
-    <!-- Detail Hero -->
-    <div class="detail-hero fade-in" id="detail-hero">
-      <div class="detail-poster" id="detail-poster">
-        <div class="poster-fallback" id="poster-fallback">?</div>
-      </div>
-      <div class="detail-info">
-        <div class="detail-title" id="detail-title">—</div>
-        <div class="detail-year" id="detail-year">—</div>
-        <div class="flex flex-wrap gap-2 mt-2" id="detail-genres"></div>
-        <div class="detail-tags-row" id="detail-tags"></div>
-      </div>
-      <div class="detail-score">
-        <div class="score-big" id="detail-final-score">—</div>
-        <div class="score-label">Final score</div>
-      </div>
-    </div>
+    <!-- 2-Column Responsive Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start fade-in" id="detail-layout">
 
-    <!-- Stat Grid with Progress Meters -->
-    <div class="stat-grid fade-in" style="--delay:0.1s" id="stat-grid">
-      <div class="stat-box">
-        <div class="stat-num text-sky-400" id="stat-story">—</div>
-        <div class="stat-label">Story</div>
-        <div class="stat-meter"><div class="stat-meter-fill story" id="meter-story" style="width:0%"></div></div>
+      <!-- Left Column: The Verdict Column (Poster, Stamp, Score, Matrix, Signature, Actions) -->
+      <aside class="lg:col-span-4 flex flex-col gap-5 lg:sticky lg:top-24">
+        <!-- Poster -->
+        <div class="sidebar-poster" id="detail-poster">
+          <div class="poster-fallback" id="poster-fallback">?</div>
+        </div>
+
+        <!-- Tier Stamp Seal -->
+        <div id="tier-seal" class="tier-stamp-seal tier-stamp-s">—</div>
+
+        <!-- Verdict Score Card -->
+        <div class="verdict-score-card">
+          <div class="score-big" id="detail-final-score">—</div>
+          <div class="score-sublabel">Final Kino Verdict</div>
+        </div>
+
+        <!-- Matrix Quadrant Badge -->
+        <a href="matrix.html" class="matrix-quadrant-badge" id="detail-matrix-badge" title="Explore in Vibe Matrix">
+          <div class="matrix-quadrant-icon" id="matrix-badge-icon">🧭</div>
+          <div class="flex-1 min-w-0">
+            <div class="matrix-quadrant-title" id="matrix-badge-title">—</div>
+            <div class="matrix-quadrant-coords" id="matrix-badge-coords">Quality — · Fun —</div>
+          </div>
+          <span class="text-xs text-kino-muted">↗</span>
+        </a>
+
+        <!-- Reviewer Signature Badge -->
+        <div class="reviewer-card" id="reviewer-card">
+          <div class="reviewer-avatar" id="reviewer-avatar">U</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs text-kino-muted uppercase tracking-wider font-semibold">Reviewed by</div>
+            <div class="text-sm font-bold text-white truncate" id="reviewer-name">@reviewer</div>
+            <div class="text-xs text-kino-secondary" id="review-date">—</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col gap-2.5 mt-1" id="detail-actions">
+          <button class="btn-primary w-full flex items-center justify-center gap-2" id="share-btn">
+            <span>🔗</span> Share Review
+          </button>
+          <div class="flex gap-2" id="owner-actions">
+            <a href="#" class="btn-secondary flex-1 text-center" id="edit-btn">Edit</a>
+            <button class="btn-danger flex-1" id="delete-btn">Delete</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Column: Editorial & 4-Metric Command Center -->
+      <div class="lg:col-span-8 flex flex-col gap-6">
+
+        <!-- Movie Header -->
+        <header class="flex flex-col gap-2 pb-5 border-b border-white/[0.08]">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight" id="detail-title">—</h1>
+          <div class="flex items-center gap-3 text-sm text-kino-muted font-medium flex-wrap">
+            <span id="detail-year">—</span>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2" id="detail-genres"></div>
+          <div class="detail-tags-row mt-2" id="detail-tags"></div>
+        </header>
+
+        <!-- 4-Metric Command Center -->
+        <section>
+          <div class="section-title flex items-center justify-between">
+            <span>The 4 Core Metrics</span>
+            <span class="text-xs font-normal text-kino-muted">Scale: 1.0 – 10.0</span>
+          </div>
+          <div class="metric-command-grid" id="stat-grid">
+            <!-- Story -->
+            <div class="metric-card metric-card-story">
+              <div class="metric-card-header">
+                <span class="metric-card-title">📖 Story</span>
+                <span class="metric-card-score text-sky-400" id="stat-story">—</span>
+              </div>
+              <div class="metric-meter-track">
+                <div class="metric-meter-fill story" id="meter-story" style="width:0%"></div>
+              </div>
+              <div class="metric-card-footer">
+                <span>Narrative & Depth</span>
+                <span class="metric-benchmark-pill" id="benchmark-story">—</span>
+              </div>
+            </div>
+            <!-- Visuals -->
+            <div class="metric-card metric-card-visuals">
+              <div class="metric-card-header">
+                <span class="metric-card-title">🎨 Visuals</span>
+                <span class="metric-card-score text-purple-400" id="stat-visuals">—</span>
+              </div>
+              <div class="metric-meter-track">
+                <div class="metric-meter-fill visuals" id="meter-visuals" style="width:0%"></div>
+              </div>
+              <div class="metric-card-footer">
+                <span>Cinematography & FX</span>
+                <span class="metric-benchmark-pill" id="benchmark-visuals">—</span>
+              </div>
+            </div>
+            <!-- Action -->
+            <div class="metric-card metric-card-action">
+              <div class="metric-card-header">
+                <span class="metric-card-title">⚡ Action</span>
+                <span class="metric-card-score text-orange-400" id="stat-action">—</span>
+              </div>
+              <div class="metric-meter-track">
+                <div class="metric-meter-fill action" id="meter-action" style="width:0%"></div>
+              </div>
+              <div class="metric-card-footer">
+                <span>Pacing & Thrill</span>
+                <span class="metric-benchmark-pill" id="benchmark-action">—</span>
+              </div>
+            </div>
+            <!-- Fun -->
+            <div class="metric-card metric-card-fun">
+              <div class="metric-card-header">
+                <span class="metric-card-title">🎉 Fun</span>
+                <span class="metric-card-score text-emerald-400" id="stat-fun">—</span>
+              </div>
+              <div class="metric-meter-track">
+                <div class="metric-meter-fill fun" id="meter-fun" style="width:0%"></div>
+              </div>
+              <div class="metric-card-footer">
+                <span>Pure Entertainment</span>
+                <span class="metric-benchmark-pill" id="benchmark-fun">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Craft vs. Entertainment Balance Meter -->
+        <section class="balance-container">
+          <div class="balance-labels">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+              <span>Craft & Depth: <strong class="text-white" id="craft-score-val">—</strong></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>Entertainment: <strong class="text-white" id="fun-score-val">—</strong></span>
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            </div>
+          </div>
+          <div class="balance-split-track">
+            <div class="balance-craft-bar" id="balance-craft-bar" style="width: 50%"></div>
+            <div class="balance-fun-bar" id="balance-fun-bar" style="width: 50%"></div>
+          </div>
+          <div class="flex justify-between items-center text-xs text-kino-muted mt-2">
+            <span id="balance-craft-pct">Story + Visuals (50%)</span>
+            <span id="balance-fun-pct">Action + Fun (50%)</span>
+          </div>
+        </section>
+
+        <!-- Bias Breakdown & Math Equation -->
+        <section class="bias-equation-box" id="bias-equation-section">
+          <div class="section-title flex items-center justify-between mb-3">
+            <span>The Personal Equation</span>
+            <span class="text-xs font-normal text-kino-muted">Base Average ± Personal Biases</span>
+          </div>
+          <div class="equation-steps">
+            <div class="equation-part">
+              <div class="equation-val text-kino-primary" id="equation-base">—</div>
+              <div class="equation-lbl">Base Metric Avg</div>
+            </div>
+            <div class="equation-op" id="equation-sign">+</div>
+            <div class="equation-part">
+              <div class="equation-val" id="equation-bias">—</div>
+              <div class="equation-lbl">Net Biases / 4</div>
+            </div>
+            <div class="equation-op">=</div>
+            <div class="equation-part">
+              <div class="equation-val text-white" id="equation-final">—</div>
+              <div class="equation-lbl">Final Kino Score</div>
+            </div>
+          </div>
+          <div id="bias-pills-container">
+            <div class="text-xs font-semibold text-kino-muted uppercase tracking-wider mb-2" id="bias-pills-label">Applied Personal Biases:</div>
+            <div id="bias-pills" class="flex flex-wrap gap-2"></div>
+          </div>
+        </section>
+
+        <!-- Editorial Written Critique -->
+        <section class="editorial-review-card" id="review-section">
+          <div class="editorial-quote-mark">“</div>
+          <div class="section-title mb-3 text-white/70">Critique & Impressions</div>
+          <p class="editorial-review-content" id="review-text"></p>
+        </section>
+
+        <!-- Synopsis -->
+        <section class="hidden bg-kino-card border border-white/[0.06] rounded-xl p-5" id="overview-section">
+          <div class="section-title mb-2 text-white/70">Synopsis</div>
+          <p class="review-text italic text-kino-secondary leading-relaxed" id="overview-text"></p>
+        </section>
+
       </div>
-      <div class="stat-box">
-        <div class="stat-num text-purple-400" id="stat-visuals">—</div>
-        <div class="stat-label">Visuals</div>
-        <div class="stat-meter"><div class="stat-meter-fill visuals" id="meter-visuals" style="width:0%"></div></div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num text-orange-400" id="stat-action">—</div>
-        <div class="stat-label">Action</div>
-        <div class="stat-meter"><div class="stat-meter-fill action" id="meter-action" style="width:0%"></div></div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num text-emerald-400" id="stat-fun">—</div>
-        <div class="stat-label">Fun</div>
-        <div class="stat-meter"><div class="stat-meter-fill fun" id="meter-fun" style="width:0%"></div></div>
-      </div>
-    </div>
-
-    <!-- Score Summary -->
-    <div class="score-summary fade-in" style="--delay:0.15s" id="score-summary">
-      <div><span style="color:var(--text-muted)">Base score</span> <strong id="base-score">—</strong></div>
-      <div><span style="color:var(--text-muted)">Total bias</span> <strong id="total-bias">—</strong></div>
-    </div>
-
-    <!-- Bias Details -->
-    <div class="fade-in" style="--delay:0.2s" id="bias-section">
-      <div class="section-title">Bias Details</div>
-      <div id="bias-pills" style="margin-bottom:2rem"></div>
-    </div>
-
-    <!-- Synopsis -->
-    <div class="fade-in hidden" style="--delay:0.22s" id="overview-section">
-      <div class="section-title">Synopsis</div>
-      <p class="review-text" id="overview-text" style="margin-bottom:2rem; font-style: italic; opacity: 0.9;"></p>
-    </div>
-
-    <!-- Written Review -->
-    <div class="fade-in" style="--delay:0.25s" id="review-section">
-      <div class="section-title">Written Review</div>
-      <p class="review-text" id="review-text" style="margin-bottom:3rem"></p>
-    </div>
-
-    <!-- Actions -->
-    <div class="fade-in flex gap-2.5 mb-12" style="--delay:0.3s">
-      <a href="#" class="btn-primary" id="edit-btn">Edit Review</a>
-      <button class="btn-danger" id="delete-btn">Delete</button>
     </div>
   </main>
 
@@ -129,6 +254,24 @@
       <div class="modal-actions">
         <button class="btn-secondary" id="cancel-delete">Cancel</button>
         <button class="btn-danger" id="confirm-delete">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Review Modal -->
+  <div class="modal-overlay" id="share-modal">
+    <div class="modal-card" style="max-width: 480px; text-align: left;">
+      <h3 class="text-lg font-bold text-white mb-1">Share Review</h3>
+      <p class="text-xs text-kino-muted mb-3">Copy your verdict card or link to share on social media.</p>
+      <div class="share-snippet-box" id="share-preview-text"></div>
+      <div class="flex flex-col sm:flex-row gap-2.5 mt-4">
+        <button class="btn-primary flex-1 flex items-center justify-center gap-1.5" id="copy-text-btn">
+          <span>📋</span> Copy Text
+        </button>
+        <button class="btn-secondary flex-1 flex items-center justify-center gap-1.5" id="copy-link-btn">
+          <span>🔗</span> Copy Link
+        </button>
+        <button class="btn-secondary px-4" id="close-share-modal">Close</button>
       </div>
     </div>
   </div>

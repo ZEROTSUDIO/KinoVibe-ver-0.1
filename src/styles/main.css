@@ -4008,5 +4008,396 @@ input[type='range']::-moz-range-thumb:hover {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+/* ====================================================================
+   KinoVibe View Page Modernization (4-Metric Command Center & Review Hub)
+   ==================================================================== */
+
+/* ── Sidebar Poster ── */
+.sidebar-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16103a 50%, #0d0d1a 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-default);
+  position: relative;
+}
+
+.sidebar-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Tier Stamp Seal ── */
+.tier-stamp-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.tier-stamp-s {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1.5px solid rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
+}
+
+.tier-stamp-a {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1.5px solid rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
+}
+
+.tier-stamp-b {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border: 1.5px solid rgba(249, 115, 22, 0.5);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
+}
+
+.tier-stamp-c {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1.5px solid rgba(234, 179, 8, 0.5);
+}
+
+.tier-stamp-d {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1.5px solid rgba(34, 197, 94, 0.5);
+}
+
+.tier-stamp-e {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1.5px solid rgba(59, 130, 246, 0.5);
+}
+
+.tier-stamp-f {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1.5px solid rgba(107, 114, 128, 0.5);
+}
+
+/* ── Verdict Score Card ── */
+.verdict-score-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.verdict-score-card .score-big {
+  font-size: 3.6rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.verdict-score-card .score-sublabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* ── Matrix Quadrant Badge ── */
+.matrix-quadrant-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.matrix-quadrant-badge:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
+}
+
+.matrix-quadrant-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.matrix-quadrant-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.matrix-quadrant-coords {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ── Reviewer Signature ── */
+.reviewer-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.reviewer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, #4338ca 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* ── The 4-Metric Command Center Cards ── */
+.metric-command-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .metric-command-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-default);
+}
+
+.metric-card-story { border-left: 3px solid #38bdf8; }
+.metric-card-visuals { border-left: 3px solid #c084fc; }
+.metric-card-action { border-left: 3px solid #fb923c; }
+.metric-card-fun { border-left: 3px solid #4ade80; }
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metric-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.metric-card-score {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.metric-meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.metric-meter-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.metric-meter-fill.story { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+.metric-meter-fill.visuals { background: linear-gradient(90deg, #9333ea, #c084fc); }
+.metric-meter-fill.action { background: linear-gradient(90deg, #ea580c, #fb923c); }
+.metric-meter-fill.fun { background: linear-gradient(90deg, #16a34a, #4ade80); }
+
+.metric-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.metric-benchmark-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+/* ── Craft vs. Entertainment Balance Meter ── */
+.balance-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+}
+
+.balance-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.balance-split-track {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.balance-craft-bar {
+  background: linear-gradient(90deg, #38bdf8, #c084fc);
+  transition: width 0.6s ease;
+}
+
+.balance-fun-bar {
+  background: linear-gradient(90deg, #fb923c, #4ade80);
+  transition: width 0.6s ease;
+}
+
+/* ── Bias Equation Inspector ── */
+.bias-equation-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.equation-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.equation-part {
+  text-align: center;
+}
+
+.equation-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.equation-lbl {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.equation-op {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ── Editorial Critique / Review Card ── */
+.editorial-review-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(22, 22, 34, 0.9) 0%, rgba(18, 18, 28, 0.9) 100%);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+}
+
+.editorial-quote-mark {
+  font-family: Georgia, serif;
+  font-size: 4rem;
+  line-height: 1;
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  color: rgba(124, 58, 237, 0.2);
+  user-select: none;
+  pointer-events: none;
+}
+
+.editorial-review-content {
+  position: relative;
+  z-index: 1;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: #f1f5f9;
+  white-space: pre-line;
+}
+
+/* ── Share Modal Snippet ── */
+.share-snippet-box {
+  background: #0f1117;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  user-select: all;
+  margin: 16px 0;
+}
+
+
 
 
