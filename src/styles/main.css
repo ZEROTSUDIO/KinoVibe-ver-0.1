@@ -142,7 +142,9 @@ a {
 .page-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 24px 3rem;
+  min-height: calc(100vh - 280px);
+  box-sizing: border-box;
 }
 
 .page-container.narrow {
@@ -3367,11 +3369,25 @@ input[type='range']::-moz-range-thumb:hover {
   flex-wrap: wrap;
 }
 
-/* ── Landing Footer ── */
+/* ── App & Landing Footer ── */
+.app-footer,
 .landing-footer {
-  background: #060609;
+  background: #07070c;
   border-top: 1px solid var(--border-subtle);
-  padding: 60px 24px 36px;
+  padding: 48px 24px 32px;
+  margin-top: 5rem;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .app-footer {
+    padding-bottom: 6.5rem; /* Clearance above the fixed mobile bottom navigation bar */
+    margin-top: 3.5rem;
+    padding-top: 36px;
+  }
 }
 
 .footer-inner {
@@ -3385,7 +3401,7 @@ input[type='range']::-moz-range-thumb:hover {
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 36px;
-  padding-bottom: 40px;
+  padding-bottom: 36px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -3435,8 +3451,28 @@ input[type='range']::-moz-range-thumb:hover {
   color: #fff;
 }
 
+button.footer-link,
+button.footer-back-to-top {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.footer-credit-link {
+  color: var(--accent-light);
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.footer-credit-link:hover {
+  color: #fff;
+}
+
 .footer-bottom {
-  padding-top: 28px;
+  padding-top: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3444,6 +3480,29 @@ input[type='range']::-moz-range-thumb:hover {
   gap: 16px;
   font-size: 12.5px;
   color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .footer-top {
+    flex-direction: column;
+    gap: 28px;
+    padding-bottom: 28px;
+  }
+  .footer-brand-col {
+    max-width: 100%;
+  }
+  .footer-links-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 18px;
+    line-height: 1.5;
+  }
 }
 
 /* ── Responsive Queries ── */
