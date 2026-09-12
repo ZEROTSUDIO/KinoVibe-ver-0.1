@@ -1,0 +1,392 @@
+// KinoVibe — Experimental Story × Fun Matrix
+// Axes: storyScore (X, horizontal = quality) vs funScore (Y, vertical = entertainment)
+// Quadrants: Dream Films | Popcorn Hits | Literary Gems | Forgettable
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { calcScores, formatScore, getScoreLevel } from '../utils/scoring.js';
+import { escapeHtml } from '../utils/ui.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect if not authenticated
+  const user = await AuthService.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  await AuthService.initNav();
+
+  const loadingStateEl = document.getElementById('loading-state');
+  const matrixWrapperEl = document.getElementById('matrix-wrapper');
+  const emptyStateEl = document.getElementById('empty-state');
+  const matrixCountEl = document.getElementById('matrix-count');
+  const plotAreaEl = document.getElementById('matrix-plot-area');
+  const matrixBoardEl = document.getElementById('matrix-board');
+  const tooltipEl = document.getElementById('matrix-tooltip');
+  const searchInputEl = document.getElementById('matrix-search');
+  const filterBtns = document.querySelectorAll('.matrix-filter-btn');
+  const btnPosters = document.getElementById('toggle-matrix-posters');
+  const btnDots = document.getElementById('toggle-matrix-dots');
+  const tagFilterBar = document.getElementById('tag-filter-bar');
+
+  let currentView = localStorage.getItem('kinovibe_matrix_story_view') || 'posters';
+  let activeQuadrant = 'all';
+  let searchTerm = '';
+  let activeTags = new Set();
+
+  // Read URL param (e.g. matrix-story.html?tag=sci-fi)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTag = urlParams.get('tag');
+  if (urlTag) activeTags.add(urlTag.trim().toLowerCase());
+
+  // Show spinner
+  if (loadingStateEl) {
+    loadingStateEl.classList.remove('hidden');
+    loadingStateEl.style.display = 'flex';
+  }
+  matrixWrapperEl.classList.add('hidden');
+  emptyStateEl.classList.add('hidden');
+
+  let rawMovies = [];
+  try {
+    rawMovies = await MovieService.getAll();
+  } catch (err) {
+    console.error('Failed to load movies for story matrix:', err);
+    rawMovies = [];
+  } finally {
+    if (loadingStateEl) {
+      loadingStateEl.classList.add('hidden');
+      loadingStateEl.style.display = 'none';
+    }
+  }
+
+  if (rawMovies.length === 0) {
+    emptyStateEl.classList.remove('hidden');
+    matrixWrapperEl.classList.add('hidden');
+    matrixCountEl.textContent = '0 movies plotted';
+    return;
+  }
+
+  emptyStateEl.classList.add('hidden');
+  matrixWrapperEl.classList.remove('hidden');
+
+  // ─── Tag Filter Bar ──────────────────────────────────
+  function renderTagFilterBar() {
+    const allTags = MovieService.getAllTags(rawMovies);
+    if (allTags.length === 0) {
+      tagFilterBar.classList.add('hidden');
+      return;
+    }
+    tagFilterBar.classList.remove('hidden');
+
+    tagFilterBar.innerHTML = `
+      <button class="tag-pill ${activeTags.size === 0 ? 'active' : ''}" data-tag="__all__">
+        All <span class="tag-pill-count">${rawMovies.length}</span>
+      </button>
+      ${allTags.map(tag => {
+        const isActive = activeTags.has(tag);
+        const cnt = rawMovies.filter(m => Array.isArray(m.tags) && m.tags.includes(tag)).length;
+        return `<button class="tag-pill ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)} <span class="tag-pill-count">${cnt}</span>
+        </button>`;
+      }).join('')}
+    `;
+
+    tagFilterBar.querySelectorAll('.tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag;
+        if (tag === '__all__') {
+          activeTags.clear();
+        } else {
+          activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
+        }
+        if (activeTags.size === 1) {
+          const [t] = activeTags;
+          history.replaceState(null, '', `?tag=${encodeURIComponent(t)}`);
+        } else {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        renderTagFilterBar();
+        rebuildAndRender();
+      });
+    });
+  }
+
+  function getTagFilteredMovies() {
+    if (activeTags.size === 0) return rawMovies;
+    return rawMovies.filter(m => {
+      const movieTags = Array.isArray(m.tags) ? m.tags : [];
+      for (const t of activeTags) {
+        if (movieTags.includes(t)) return true;
+      }
+      return false;
+    });
+  }
+  // ────────────────────────────────────────────────────
+
+  // Process movie coordinates using Story (X) and Fun (Y) only
+  const coordMap = new Map();
+
+  function processMovies(source) {
+    coordMap.clear();
+    return source.map(movie => {
+      const story = Number(movie.storyScore) || 0;
+      const fun   = Number(movie.funScore)   || 0;
+
+      // X axis: Story score (narrative depth)
+      const storyX = story;
+      // Y axis: Fun score (pure enjoyment)
+      const funY = fun;
+
+      const scores = calcScores(story, Number(movie.visualScore) || 0, Number(movie.actionScore) || 0, fun, movie.biases || []);
+      const finalScore = Number(scores.final);
+
+      // 4 Quadrants — story >= 5 and fun >= 5
+      let quadrant = 'forgettable';
+      let quadrantLabel = 'Forgettable';
+      if (story >= 5 && fun >= 5) {
+        quadrant = 'dream';      quadrantLabel = 'Dream Films';
+      } else if (story < 5 && fun >= 5) {
+        quadrant = 'popcorn';   quadrantLabel = 'Popcorn Hits';
+      } else if (story >= 5 && fun < 5) {
+        quadrant = 'literary';  quadrantLabel = 'Literary Gems';
+      }
+
+      const key = `${storyX.toFixed(1)}_${funY.toFixed(1)}`;
+      const coordIndex = coordMap.get(key) || 0;
+      coordMap.set(key, coordIndex + 1);
+
+      return {
+        ...movie,
+        storyX, funY,
+        story, fun,
+        finalScore, quadrant, quadrantLabel, coordIndex
+      };
+    });
+  }
+
+  let movies = processMovies(rawMovies);
+
+  function rebuildAndRender() {
+    const filtered = getTagFilteredMovies();
+    movies = processMovies(filtered);
+
+    const displayCount = activeTags.size > 0
+      ? `${filtered.length} / ${rawMovies.length} films — story × fun`
+      : `${rawMovies.length} film${rawMovies.length !== 1 ? 's' : ''} — story × fun`;
+    matrixCountEl.textContent = displayCount;
+
+    renderPins();
+  }
+
+  // Calculate percentage positions
+  const INSET  = 6; // % margin inside board
+  const USABLE = 100 - (INSET * 2);
+
+  function renderPins() {
+    plotAreaEl.className = `matrix-plot-area mode-${currentView}`;
+    plotAreaEl.innerHTML = '';
+
+    movies.forEach(movie => {
+      // Deterministic slight offset for identical coordinates
+      let offsetX = 0;
+      let offsetY = 0;
+      if (movie.coordIndex > 0) {
+        const angle  = (movie.coordIndex * 137.5) * (Math.PI / 180);
+        const radius = Math.min(2.5, movie.coordIndex * 0.9);
+        offsetX = Math.cos(angle) * radius;
+        offsetY = Math.sin(angle) * radius;
+      }
+
+      // X = storyScore, Y = funScore
+      let posX = INSET + (movie.storyX / 10) * USABLE + offsetX;
+      let posY = INSET + (movie.funY   / 10) * USABLE + offsetY;
+
+      posX = Math.max(3, Math.min(97, posX));
+      posY = Math.max(3, Math.min(97, posY));
+
+      // Map our quadrant keys to CSS classes that already exist in main.css
+      const cssQuadrantMap = {
+        dream:       'peak',
+        popcorn:     'guilty',
+        literary:    'slow',
+        forgettable: 'duds'
+      };
+      const cssQ = cssQuadrantMap[movie.quadrant] || 'duds';
+
+      const pin = document.createElement('a');
+      pin.href = `view.html?id=${movie.id}`;
+      pin.className = `matrix-pin q-${cssQ}`;
+      pin.dataset.id = movie.id;
+      pin.dataset.quadrant = movie.quadrant;
+      pin.dataset.title = (movie.title || '').toLowerCase();
+      pin.style.left   = `${posX.toFixed(2)}%`;
+      pin.style.bottom = `${posY.toFixed(2)}%`;
+
+      const level          = getScoreLevel(movie.finalScore);
+      const formattedScore = formatScore(movie.finalScore);
+
+      if (currentView === 'posters') {
+        const posterContent = movie.posterUrl
+          ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="matrix-pin-poster-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+             <div class="matrix-pin-fallback" style="display:none">${escapeHtml((movie.title || '?')[0])}</div>`
+          : `<div class="matrix-pin-fallback">${escapeHtml((movie.title || '?')[0])}</div>`;
+
+        pin.innerHTML = `
+          <div class="matrix-pin-poster">
+            ${posterContent}
+            <div class="matrix-pin-score ${level}">${formattedScore}</div>
+          </div>
+        `;
+      } else {
+        pin.innerHTML = `
+          <div class="matrix-pin-dot">
+            <span class="matrix-dot-inner"></span>
+            <span class="matrix-dot-badge">${formattedScore}</span>
+          </div>
+        `;
+      }
+
+      // Hover / Tooltip logic
+      pin.addEventListener('mouseenter', () => showTooltip(movie, pin, cssQ));
+      pin.addEventListener('mouseleave', hideTooltip);
+      pin.addEventListener('focus',      () => showTooltip(movie, pin, cssQ));
+      pin.addEventListener('blur',       hideTooltip);
+
+      plotAreaEl.appendChild(pin);
+    });
+
+    applyFilters();
+  }
+
+  function showTooltip(movie, pinEl, cssQ) {
+    if (!tooltipEl || !matrixBoardEl) return;
+
+    const formattedScore = formatScore(movie.finalScore);
+    const level          = getScoreLevel(movie.finalScore);
+
+    const posterThumb = movie.posterUrl
+      ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="tooltip-poster" onerror="this.style.display='none'">`
+      : '';
+
+    // Tags in tooltip
+    const movieTags = Array.isArray(movie.tags) ? movie.tags : [];
+    const tagsHtml  = movieTags.length > 0
+      ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${movieTags.slice(0, 4).map(t => `<span class="tag-link" style="pointer-events:none;font-size:10px;padding:1px 7px">${escapeHtml(t)}</span>`).join('')}</div>`
+      : '';
+
+    tooltipEl.innerHTML = `
+      <div class="tooltip-content">
+        ${posterThumb}
+        <div class="tooltip-details">
+          <div class="tooltip-header">
+            <div class="tooltip-title">${escapeHtml(movie.title)}</div>
+            <div class="tooltip-year">${escapeHtml(movie.year) || '—'}</div>
+          </div>
+          <div class="tooltip-badge q-${cssQ}">${escapeHtml(movie.quadrantLabel)}</div>
+          ${tagsHtml}
+          <div class="tooltip-stats">
+            <div class="stat-row">
+              <span class="stat-lbl">Story:</span>
+              <strong class="stat-val">${movie.story.toFixed(1)}</strong>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Fun:</span>
+              <strong class="stat-val">${movie.fun.toFixed(1)}</strong>
+            </div>
+            <div class="stat-row final-row">
+              <span class="stat-lbl">Overall Score:</span>
+              <strong class="stat-val ${level}">${formattedScore}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    tooltipEl.classList.remove('hidden');
+
+    // Position tooltip near the pin
+    const boardRect   = matrixBoardEl.getBoundingClientRect();
+    const pinRect     = pinEl.getBoundingClientRect();
+
+    let left = pinRect.left - boardRect.left + (pinRect.width / 2);
+    let top  = pinRect.top  - boardRect.top;
+
+    const tooltipWidth = 260;
+    if (left + (tooltipWidth / 2) > boardRect.width - 15) {
+      left = boardRect.width - tooltipWidth - 15;
+    } else if (left - (tooltipWidth / 2) < 15) {
+      left = 15;
+    } else {
+      left = left - (tooltipWidth / 2);
+    }
+
+    if (top < 160) {
+      top = top + pinRect.height + 10;
+    } else {
+      top = top - 180;
+    }
+
+    tooltipEl.style.left = `${Math.max(10, left)}px`;
+    tooltipEl.style.top  = `${Math.max(10, top)}px`;
+  }
+
+  function hideTooltip() {
+    if (tooltipEl) tooltipEl.classList.add('hidden');
+  }
+
+  function applyFilters() {
+    const pins = plotAreaEl.querySelectorAll('.matrix-pin');
+    pins.forEach(pin => {
+      const matchQuadrant = activeQuadrant === 'all' || pin.dataset.quadrant === activeQuadrant;
+      const matchSearch   = !searchTerm || pin.dataset.title.includes(searchTerm);
+
+      if (!matchQuadrant) {
+        pin.classList.add('dimmed');
+        pin.classList.remove('highlighted');
+      } else if (matchSearch) {
+        pin.classList.remove('dimmed');
+        if (searchTerm) pin.classList.add('highlighted');
+        else            pin.classList.remove('highlighted');
+      } else {
+        pin.classList.add('dimmed');
+        pin.classList.remove('highlighted');
+      }
+    });
+  }
+
+  // Quadrant filter buttons
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeQuadrant = btn.dataset.quadrant;
+      applyFilters();
+    });
+  });
+
+  if (searchInputEl) {
+    searchInputEl.addEventListener('input', (e) => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  function setView(mode) {
+    currentView = mode;
+    localStorage.setItem('kinovibe_matrix_story_view', mode);
+
+    if (btnPosters) btnPosters.classList.toggle('active', mode === 'posters');
+    if (btnDots)    btnDots.classList.toggle('active',    mode === 'dots');
+
+    renderPins();
+  }
+
+  if (btnPosters) btnPosters.addEventListener('click', () => setView('posters'));
+  if (btnDots)    btnDots.addEventListener('click',    () => setView('dots'));
+
+  // Initial render
+  renderTagFilterBar();
+  matrixCountEl.textContent = `${rawMovies.length} film${rawMovies.length !== 1 ? 's' : ''} — story × fun`;
+  setView(currentView);
+});

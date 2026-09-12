@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
           view: resolve(__dirname, 'view.html'),
           tiers: resolve(__dirname, 'tiers.html'),
           matrix: resolve(__dirname, 'matrix.html'),
+          'matrix-story': resolve(__dirname, 'matrix-story.html'),
           login: resolve(__dirname, 'login.html'),
           admin: resolve(__dirname, 'admin.html'),
         }
