@@ -1,0 +1,442 @@
+// KinoVibe — Experimental Rare Matrix
+//
+// The coordinate space is remapped from 0–10 → 3–10.
+//   MIN  = 3   (floor — any axis value below this is clamped to 3)
+//   MAX  = 10
+//   SPAN = 7   (MAX - MIN)
+//   MID  = 6.5 (new quadrant boundary, midpoint of [3, 10])
+//
+// Axes are the same as the classic matrix:
+//   X (horizontal / Quality)      = avg(Story + Visuals)
+//   Y (vertical  / Entertainment) = avg(Action + Fun)
+//
+// Position formula:
+//   posX = INSET + ((clamp(quality, 3, 10) - 3) / 7) * USABLE
+//   posY = INSET + ((clamp(entertainment, 3, 10) - 3) / 7) * USABLE
+//
+// Quadrant boundary = 6.5 (instead of 5.0 in classic)
+
+import { AuthService } from '../services/auth.service.js';
+import { MovieService } from '../services/movie.service.js';
+import { calcScores, formatScore, getScoreLevel } from '../utils/scoring.js';
+import { escapeHtml } from '../utils/ui.js';
+
+// ─── Scale Constants ─────────────────────────────────────────────────────────
+const SCALE_MIN  = 3;
+const SCALE_MAX  = 10;
+const SCALE_SPAN = SCALE_MAX - SCALE_MIN; // 7
+const SCALE_MID  = SCALE_MIN + SCALE_SPAN / 2; // 6.5
+
+function clampToScale(value) {
+  return Math.max(SCALE_MIN, Math.min(SCALE_MAX, value));
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Require login — redirect if not authenticated
+  const user = await AuthService.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  await AuthService.initNav();
+
+  const loadingStateEl  = document.getElementById('loading-state');
+  const matrixWrapperEl = document.getElementById('matrix-wrapper');
+  const emptyStateEl    = document.getElementById('empty-state');
+  const matrixCountEl   = document.getElementById('matrix-count');
+  const plotAreaEl      = document.getElementById('matrix-plot-area');
+  const matrixBoardEl   = document.getElementById('matrix-board');
+  const tooltipEl       = document.getElementById('matrix-tooltip');
+  const searchInputEl   = document.getElementById('matrix-search');
+  const filterBtns      = document.querySelectorAll('.matrix-filter-btn');
+  const btnPosters      = document.getElementById('toggle-matrix-posters');
+  const btnDots         = document.getElementById('toggle-matrix-dots');
+  const tagFilterBar    = document.getElementById('tag-filter-bar');
+
+  let currentView   = localStorage.getItem('kinovibe_matrix_rare_view') || 'posters';
+  let activeQuadrant = 'all';
+  let searchTerm    = '';
+  let activeTags    = new Set();
+
+  // Read URL param (e.g. matrix-rare.html?tag=sci-fi)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTag    = urlParams.get('tag');
+  if (urlTag) activeTags.add(urlTag.trim().toLowerCase());
+
+  // Show spinner
+  if (loadingStateEl) {
+    loadingStateEl.classList.remove('hidden');
+    loadingStateEl.style.display = 'flex';
+  }
+  matrixWrapperEl.classList.add('hidden');
+  emptyStateEl.classList.add('hidden');
+
+  let rawMovies = [];
+  try {
+    rawMovies = await MovieService.getAll();
+  } catch (err) {
+    console.error('Failed to load movies for rare matrix:', err);
+    rawMovies = [];
+  } finally {
+    if (loadingStateEl) {
+      loadingStateEl.classList.add('hidden');
+      loadingStateEl.style.display = 'none';
+    }
+  }
+
+  if (rawMovies.length === 0) {
+    emptyStateEl.classList.remove('hidden');
+    matrixWrapperEl.classList.add('hidden');
+    matrixCountEl.textContent = '0 movies plotted';
+    return;
+  }
+
+  emptyStateEl.classList.add('hidden');
+  matrixWrapperEl.classList.remove('hidden');
+
+  // ─── Tag Filter Bar ──────────────────────────────────────────────────────
+  function renderTagFilterBar() {
+    const allTags = MovieService.getAllTags(rawMovies);
+    if (allTags.length === 0) {
+      tagFilterBar.classList.add('hidden');
+      return;
+    }
+    tagFilterBar.classList.remove('hidden');
+
+    tagFilterBar.innerHTML = `
+      <button class="tag-pill ${activeTags.size === 0 ? 'active' : ''}" data-tag="__all__">
+        All <span class="tag-pill-count">${rawMovies.length}</span>
+      </button>
+      ${allTags.map(tag => {
+        const isActive = activeTags.has(tag);
+        const cnt = rawMovies.filter(m => Array.isArray(m.tags) && m.tags.includes(tag)).length;
+        return `<button class="tag-pill ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)} <span class="tag-pill-count">${cnt}</span>
+        </button>`;
+      }).join('')}
+    `;
+
+    tagFilterBar.querySelectorAll('.tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tag;
+        if (tag === '__all__') {
+          activeTags.clear();
+        } else {
+          activeTags.has(tag) ? activeTags.delete(tag) : activeTags.add(tag);
+        }
+        if (activeTags.size === 1) {
+          const [t] = activeTags;
+          history.replaceState(null, '', `?tag=${encodeURIComponent(t)}`);
+        } else {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        renderTagFilterBar();
+        rebuildAndRender();
+      });
+    });
+  }
+
+  function getTagFilteredMovies() {
+    if (activeTags.size === 0) return rawMovies;
+    return rawMovies.filter(m => {
+      const movieTags = Array.isArray(m.tags) ? m.tags : [];
+      for (const t of activeTags) {
+        if (movieTags.includes(t)) return true;
+      }
+      return false;
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Movie Processing (Rare Scale) ───────────────────────────────────────
+  const coordMap = new Map();
+
+  function processMovies(source) {
+    coordMap.clear();
+    return source.map(movie => {
+      const story   = Number(movie.storyScore)  || 0;
+      const visuals = Number(movie.visualScore) || 0;
+      const action  = Number(movie.actionScore) || 0;
+      const fun     = Number(movie.funScore)    || 0;
+
+      // Raw axis values (same formula as classic matrix)
+      const rawQuality       = Math.round(((story + visuals) / 2) * 10) / 10;
+      const rawEntertainment = Math.round(((action + fun)    / 2) * 10) / 10;
+
+      // Clamped values for positioning and quadrant logic
+      const quality       = clampToScale(rawQuality);
+      const entertainment = clampToScale(rawEntertainment);
+
+      // Were these clamped?
+      const qualityClamped       = rawQuality       < SCALE_MIN;
+      const entertainmentClamped = rawEntertainment < SCALE_MIN;
+
+      const scores     = calcScores(story, visuals, action, fun, movie.biases || []);
+      const finalScore = Number(scores.final);
+
+      // Quadrant boundary = SCALE_MID (6.5) — not 5.0
+      let quadrant      = 'duds';
+      let quadrantLabel = 'Duds & Skips';
+      if (quality >= SCALE_MID && entertainment >= SCALE_MID) {
+        quadrant = 'peak';  quadrantLabel = 'Peak Cinema';
+      } else if (quality < SCALE_MID && entertainment >= SCALE_MID) {
+        quadrant = 'guilty'; quadrantLabel = 'Guilty Pleasures';
+      } else if (quality >= SCALE_MID && entertainment < SCALE_MID) {
+        quadrant = 'slow';  quadrantLabel = 'Slow Burns & Prestige';
+      }
+
+      const key        = `${quality.toFixed(1)}_${entertainment.toFixed(1)}`;
+      const coordIndex = coordMap.get(key) || 0;
+      coordMap.set(key, coordIndex + 1);
+
+      return {
+        ...movie,
+        // Clamped (used for positioning)
+        quality, entertainment,
+        // Raw (shown in tooltip)
+        rawQuality, rawEntertainment,
+        qualityClamped, entertainmentClamped,
+        // Individual scores
+        story, visuals, action, fun,
+        finalScore, quadrant, quadrantLabel, coordIndex
+      };
+    });
+  }
+
+  let movies = processMovies(rawMovies);
+
+  function rebuildAndRender() {
+    const filtered = getTagFilteredMovies();
+    movies = processMovies(filtered);
+
+    const displayCount = activeTags.size > 0
+      ? `${filtered.length} / ${rawMovies.length} movies plotted`
+      : `${rawMovies.length} movie${rawMovies.length !== 1 ? 's' : ''} plotted`;
+    matrixCountEl.textContent = displayCount;
+
+    renderPins();
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Positioning (Rare Scale) ─────────────────────────────────────────────
+  const INSET  = 6;               // % margin inside board
+  const USABLE = 100 - INSET * 2; // usable % of the board
+
+  function toPercent(value) {
+    // Map a clamped [3, 10] value to [0, 1] within the usable area
+    return INSET + ((value - SCALE_MIN) / SCALE_SPAN) * USABLE;
+  }
+
+  function renderPins() {
+    plotAreaEl.className = `matrix-plot-area mode-${currentView}`;
+    plotAreaEl.innerHTML = '';
+
+    movies.forEach(movie => {
+      // Deterministic slight offset for stacked identical coordinates
+      let offsetX = 0;
+      let offsetY = 0;
+      if (movie.coordIndex > 0) {
+        const angle  = (movie.coordIndex * 137.5) * (Math.PI / 180);
+        const radius = Math.min(2.5, movie.coordIndex * 0.9);
+        offsetX = Math.cos(angle) * radius;
+        offsetY = Math.sin(angle) * radius;
+      }
+
+      let posX = toPercent(movie.quality)       + offsetX;
+      let posY = toPercent(movie.entertainment)  + offsetY;
+
+      posX = Math.max(3, Math.min(97, posX));
+      posY = Math.max(3, Math.min(97, posY));
+
+      const pin = document.createElement('a');
+      pin.href              = `view.html?id=${movie.id}`;
+      pin.className         = `matrix-pin q-${movie.quadrant}`;
+      pin.dataset.id        = movie.id;
+      pin.dataset.quadrant  = movie.quadrant;
+      pin.dataset.title     = (movie.title || '').toLowerCase();
+      pin.style.left        = `${posX.toFixed(2)}%`;
+      pin.style.bottom      = `${posY.toFixed(2)}%`;
+
+      const level          = getScoreLevel(movie.finalScore);
+      const formattedScore = formatScore(movie.finalScore);
+
+      if (currentView === 'posters') {
+        const posterContent = movie.posterUrl
+          ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="matrix-pin-poster-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+             <div class="matrix-pin-fallback" style="display:none">${escapeHtml((movie.title || '?')[0])}</div>`
+          : `<div class="matrix-pin-fallback">${escapeHtml((movie.title || '?')[0])}</div>`;
+
+        pin.innerHTML = `
+          <div class="matrix-pin-poster">
+            ${posterContent}
+            <div class="matrix-pin-score ${level}">${formattedScore}</div>
+          </div>
+        `;
+      } else {
+        pin.innerHTML = `
+          <div class="matrix-pin-dot">
+            <span class="matrix-dot-inner"></span>
+            <span class="matrix-dot-badge">${formattedScore}</span>
+          </div>
+        `;
+      }
+
+      pin.addEventListener('mouseenter', () => showTooltip(movie, pin));
+      pin.addEventListener('mouseleave', hideTooltip);
+      pin.addEventListener('focus',      () => showTooltip(movie, pin));
+      pin.addEventListener('blur',       hideTooltip);
+
+      plotAreaEl.appendChild(pin);
+    });
+
+    applyFilters();
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Tooltip ──────────────────────────────────────────────────────────────
+  function showTooltip(movie, pinEl) {
+    if (!tooltipEl || !matrixBoardEl) return;
+
+    const formattedScore = formatScore(movie.finalScore);
+    const level          = getScoreLevel(movie.finalScore);
+
+    const posterThumb = movie.posterUrl
+      ? `<img src="${escapeHtml(movie.posterUrl)}" alt="${escapeHtml(movie.title)}" class="tooltip-poster" onerror="this.style.display='none'">`
+      : '';
+
+    // Tags
+    const movieTags = Array.isArray(movie.tags) ? movie.tags : [];
+    const tagsHtml  = movieTags.length > 0
+      ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${movieTags.slice(0, 4).map(t => `<span class="tag-link" style="pointer-events:none;font-size:10px;padding:1px 7px">${escapeHtml(t)}</span>`).join('')}</div>`
+      : '';
+
+    // Clamp warnings — shown only when a raw value was below 3
+    const qualityClampNote = movie.qualityClamped
+      ? `<span style="margin-left:4px;font-size:9px;color:#f59e0b;opacity:.85" title="Raw value ${movie.rawQuality.toFixed(1)} — clamped to 3 for rare scale">⚠ clamped</span>`
+      : '';
+    const entertainmentClampNote = movie.entertainmentClamped
+      ? `<span style="margin-left:4px;font-size:9px;color:#f59e0b;opacity:.85" title="Raw value ${movie.rawEntertainment.toFixed(1)} — clamped to 3 for rare scale">⚠ clamped</span>`
+      : '';
+
+    tooltipEl.innerHTML = `
+      <div class="tooltip-content">
+        ${posterThumb}
+        <div class="tooltip-details">
+          <div class="tooltip-header">
+            <div class="tooltip-title">${escapeHtml(movie.title)}</div>
+            <div class="tooltip-year">${escapeHtml(movie.year) || '—'}</div>
+          </div>
+          <div class="tooltip-badge q-${movie.quadrant}">${escapeHtml(movie.quadrantLabel)}</div>
+          ${tagsHtml}
+          <div class="tooltip-stats">
+            <div class="stat-row">
+              <span class="stat-lbl">Quality (Story + Visuals):</span>
+              <strong class="stat-val">${movie.rawQuality.toFixed(1)}</strong>${qualityClampNote}
+            </div>
+            <div class="stat-breakdown">Story ${movie.story} · Visuals ${movie.visuals}</div>
+            <div class="stat-row">
+              <span class="stat-lbl">Entertainment (Action + Fun):</span>
+              <strong class="stat-val">${movie.rawEntertainment.toFixed(1)}</strong>${entertainmentClampNote}
+            </div>
+            <div class="stat-breakdown">Action ${movie.action} · Fun ${movie.fun}</div>
+            <div class="stat-row final-row">
+              <span class="stat-lbl">Overall Score:</span>
+              <strong class="stat-val ${level}">${formattedScore}</strong>
+            </div>
+            <div style="margin-top:6px;font-size:10px;opacity:.45;border-top:1px solid rgba(255,255,255,.07);padding-top:5px">
+              Rare scale: 3–10 · center 6.5
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    tooltipEl.classList.remove('hidden');
+
+    // Position tooltip near the pin
+    const boardRect = matrixBoardEl.getBoundingClientRect();
+    const pinRect   = pinEl.getBoundingClientRect();
+
+    let left = pinRect.left - boardRect.left + (pinRect.width / 2);
+    let top  = pinRect.top  - boardRect.top;
+
+    const tooltipWidth = 260;
+    if (left + (tooltipWidth / 2) > boardRect.width - 15) {
+      left = boardRect.width - tooltipWidth - 15;
+    } else if (left - (tooltipWidth / 2) < 15) {
+      left = 15;
+    } else {
+      left = left - (tooltipWidth / 2);
+    }
+
+    top = top < 160 ? top + pinRect.height + 10 : top - 180;
+
+    tooltipEl.style.left = `${Math.max(10, left)}px`;
+    tooltipEl.style.top  = `${Math.max(10, top)}px`;
+  }
+
+  function hideTooltip() {
+    if (tooltipEl) tooltipEl.classList.add('hidden');
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Filter & Search ─────────────────────────────────────────────────────
+  function applyFilters() {
+    const pins = plotAreaEl.querySelectorAll('.matrix-pin');
+    pins.forEach(pin => {
+      const matchQuadrant = activeQuadrant === 'all' || pin.dataset.quadrant === activeQuadrant;
+      const matchSearch   = !searchTerm || pin.dataset.title.includes(searchTerm);
+
+      if (!matchQuadrant) {
+        pin.classList.add('dimmed');
+        pin.classList.remove('highlighted');
+      } else if (matchSearch) {
+        pin.classList.remove('dimmed');
+        if (searchTerm) pin.classList.add('highlighted');
+        else            pin.classList.remove('highlighted');
+      } else {
+        pin.classList.add('dimmed');
+        pin.classList.remove('highlighted');
+      }
+    });
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeQuadrant = btn.dataset.quadrant;
+      applyFilters();
+    });
+  });
+
+  if (searchInputEl) {
+    searchInputEl.addEventListener('input', (e) => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── View Toggle (Posters / Dots) ─────────────────────────────────────────
+  function setView(mode) {
+    currentView = mode;
+    localStorage.setItem('kinovibe_matrix_rare_view', mode);
+
+    if (btnPosters) btnPosters.classList.toggle('active', mode === 'posters');
+    if (btnDots)    btnDots.classList.toggle('active',    mode === 'dots');
+
+    renderPins();
+  }
+
+  if (btnPosters) btnPosters.addEventListener('click', () => setView('posters'));
+  if (btnDots)    btnDots.addEventListener('click',    () => setView('dots'));
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Initial render
+  renderTagFilterBar();
+  matrixCountEl.textContent = `${rawMovies.length} movie${rawMovies.length !== 1 ? 's' : ''} plotted`;
+  setView(currentView);
+});

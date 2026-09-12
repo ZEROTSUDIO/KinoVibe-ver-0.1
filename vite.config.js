@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
           tiers: resolve(__dirname, 'tiers.html'),
           matrix: resolve(__dirname, 'matrix.html'),
           'matrix-story': resolve(__dirname, 'matrix-story.html'),
+          'matrix-rare': resolve(__dirname, 'matrix-rare.html'),
           login: resolve(__dirname, 'login.html'),
           admin: resolve(__dirname, 'admin.html'),
         }
