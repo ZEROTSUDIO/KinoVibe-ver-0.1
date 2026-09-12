@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) throw error;
 
         // If email confirmation is enabled or auto-logged in
-        if (data.session) {
+        if (data?.session) {
           window.location.href = 'library.html';
         } else {
           alertBox.className = 'auth-alert success';

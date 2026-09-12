@@ -84,7 +84,7 @@ export const AuthService = {
     if (error) throw error;
     _cachedUser = null;
     _cachedProfile = null;
-    return data;
+    return { data, error: null };
   },
 
   async signIn(email, password) {
@@ -95,7 +95,7 @@ export const AuthService = {
     if (error) throw error;
     _cachedUser = data.user;
     _cachedProfile = null;
-    return data;
+    return { data, error: null };
   },
 
   async signOut() {
